@@ -2,10 +2,14 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
+const connectDB = require('./mongoClient');
 const routes = require('./routes');
 
 const app = express();
 const port = process.env.PORT || 3000;
+
+// Connect to MongoDB
+connectDB();
 
 // Middleware
 app.use(cors());
@@ -13,15 +17,15 @@ app.use(express.json());
 app.use(morgan('dev'));
 
 // Routing
-// The ESP32 code directly hits /rest/v1/sensor_logs to simulate Supabase API. 
-// We will intercept that route here and forward it appropriately.
+// The ESP32 code directly hits /rest/v1/sensor_logs to simulate Supabase API.
+// We intercept that route here and save to MongoDB instead.
 app.use('/rest/v1', routes);
-// We also expose /api for general usage
+// Also expose /api for general usage
 app.use('/api', routes);
 
 // Health check root endpoint
 app.get('/', (req, res) => {
-    res.json({ status: 'active', message: 'AC Automation Node.js Backend is running' });
+    res.json({ status: 'active', message: 'AC Automation Node.js Backend is running (MongoDB)' });
 });
 
 // Start the server
