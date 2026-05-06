@@ -1,4 +1,10 @@
 require('dotenv').config();
+
+// Polyfill global crypto for Node 16 (Required by newer Azure SDKs)
+const webcrypto = require('crypto').webcrypto;
+if (!globalThis.crypto) {
+    globalThis.crypto = webcrypto;
+}
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
