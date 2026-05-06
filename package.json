@@ -1,7 +1,9 @@
 {
   "dependencies": {
+    "@azure/event-hubs": "^6.0.4",
     "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.103.3",
+    "azure-iothub": "^1.16.6",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",

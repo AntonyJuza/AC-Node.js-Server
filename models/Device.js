@@ -1,10 +1,11 @@
 const mongoose = require('mongoose');
 
-const sensorLogSchema = new mongoose.Schema(
+const deviceSchema = new mongoose.Schema(
     {
         deviceId: {
             type: String,
             required: true,
+            unique: true,
             trim: true,
         },
         deviceName: {
@@ -13,10 +14,12 @@ const sensorLogSchema = new mongoose.Schema(
             trim: true,
             default: 'Unknown Device',
         },
-        event: {
+        activeConfigName: {
             type: String,
-            required: true,
-            trim: true,
+            default: 'NONE',
+        },
+        configData: {
+            type: mongoose.Schema.Types.Mixed,
         },
     },
     {
@@ -27,9 +30,9 @@ const sensorLogSchema = new mongoose.Schema(
 );
 
 // Virtual field for Indian Standard Time (IST)
-sensorLogSchema.virtual('timestamp_ist').get(function() {
-    if (!this.createdAt) return null;
-    return new Date(this.createdAt).toLocaleString('en-IN', {
+deviceSchema.virtual('updatedAtIST').get(function() {
+    if (!this.updatedAt) return null;
+    return new Date(this.updatedAt).toLocaleString('en-IN', {
         timeZone: 'Asia/Kolkata',
         hour12: true,
         day: '2-digit',
@@ -41,4 +44,4 @@ sensorLogSchema.virtual('timestamp_ist').get(function() {
     });
 });
 
-module.exports = mongoose.model('SensorLog', sensorLogSchema);
+module.exports = mongoose.model('Device', deviceSchema);
