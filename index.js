@@ -4,8 +4,6 @@ const cors = require('cors');
 const morgan = require('morgan');
 const connectDB = require('./mongoClient');
 const routes = require('./routes');
-const { startIoTHubListener } = require('./iotHubClient');
-const { initServiceClient } = require('./iotHubService');
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -30,16 +28,7 @@ app.get('/', (req, res) => {
 });
 
 // Start the server
-app.listen(port, '0.0.0.0', async () => {
+app.listen(port, '0.0.0.0', () => {
     console.log(`[SERVER] Listening on http://0.0.0.0:${port}`);
     console.log(`[ROUTE] ESP32 endpoint active at /rest/v1/sensor_logs`);
-
-    // Start Azure IoT Hub integration
-    try {
-        await initServiceClient();
-        await startIoTHubListener();
-    } catch (err) {
-        console.error('[IOT HUB] Failed to initialize:', err.message);
-        console.warn('[IOT HUB] Server continues without IoT Hub integration.');
-    }
 });
