@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AC Automation Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="sidebar-header">
+      <span class="logo">❄️</span>
+      <span class="logo-text">AC Automation</span>
+    </div>
+    <ul class="nav-links">
+      <li><a href="#" class="nav-item active" data-page="dashboard">
+        <span class="icon">📊</span> Dashboard
+      </a></li>
+      <li><a href="#" class="nav-item" data-page="devices">
+        <span class="icon">📡</span> Devices
+      </a></li>
+      <li><a href="#" class="nav-item" data-page="events">
+        <span class="icon">📋</span> Event Log
+      </a></li>
+      <li><a href="#" class="nav-item" data-page="commands">
+        <span class="icon">⚡</span> Send Command
+      </a></li>
+    </ul>
+    <div class="sidebar-footer">
+      <div class="server-status" id="serverStatus">
+        <span class="status-dot" id="statusDot"></span>
+        <span id="statusText">Checking...</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Dashboard Page -->
+    <div id="page-dashboard" class="page active">
+      <div class="page-header">
+        <h1>Dashboard</h1>
+        <button class="btn btn-secondary" onclick="refreshDashboard()">↻ Refresh</button>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon">📡</div>
+          <div class="stat-info">
+            <div class="stat-value" id="statDevices">—</div>
+            <div class="stat-label">Devices Synced</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">📋</div>
+          <div class="stat-info">
+            <div class="stat-value" id="statEvents">—</div>
+            <div class="stat-label">Total Events (last 50)</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">🟢</div>
+          <div class="stat-info">
+            <div class="stat-value" id="statAcOn">—</div>
+            <div class="stat-label">AC ON Events</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">🔴</div>
+          <div class="stat-info">
+            <div class="stat-value" id="statAcOff">—</div>
+            <div class="stat-label">AC OFF Events</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dashboard-grid">
+        <div class="card">
+          <div class="card-header">
+            <h2>Recent Events</h2>
+            <span class="badge" id="recentEventsBadge">Live</span>
+          </div>
+          <div class="table-wrapper">
+            <table class="data-table" id="dashboardEventsTable">
+              <thead>
+                <tr>
+                  <th>Device</th>
+                  <th>Event</th>
+                  <th>Temp (°C)</th>
+                  <th>Presence</th>
+                  <th>Time (IST)</th>
+                </tr>
+              </thead>
+              <tbody id="dashboardEventsBody">
+                <tr><td colspan="5" class="loading">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2>Registered Devices</h2>
+          </div>
+          <div id="dashboardDevicesList" class="device-list">
+            <div class="loading">Loading...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Devices Page -->
+    <div id="page-devices" class="page">
+      <div class="page-header">
+        <h1>Devices</h1>
+        <button class="btn btn-secondary" onclick="loadDevicesPage()">↻ Refresh</button>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2>Lookup Device</h2>
+        </div>
+        <div class="form-row">
+          <input type="text" id="deviceLookupId" class="input" placeholder="Enter Device ID" />
+          <button class="btn btn-primary" onclick="lookupDevice()">Search</button>
+        </div>
+        <div id="deviceLookupResult" class="device-detail hidden"></div>
+      </div>
+
+      <div class="card" style="margin-top:1.5rem">
+        <div class="card-header">
+          <h2>All Synced Devices</h2>
+          <span class="hint">Devices that have synced at least once</span>
+        </div>
+        <div id="allDevicesContainer">
+          <div class="loading">Loading...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Events Page -->
+    <div id="page-events" class="page">
+      <div class="page-header">
+        <h1>Event Log</h1>
+        <div class="header-actions">
+          <label class="toggle-label">
+            <input type="checkbox" id="autoRefreshToggle" onchange="toggleAutoRefresh()" />
+            Auto-refresh (5s)
+          </label>
+          <button class="btn btn-secondary" onclick="loadEvents()">↻ Refresh</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2>AC Events (Last 50)</h2>
+          <span class="badge" id="eventCount">0 events</span>
+        </div>
+        <div class="filters">
+          <input type="text" id="eventFilter" class="input input-sm" placeholder="Filter by device ID or event..." oninput="filterEvents()" />
+        </div>
+        <div class="table-wrapper">
+          <table class="data-table" id="eventsTable">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Device ID</th>
+                <th>Event</th>
+                <th>Temperature (°C)</th>
+                <th>Presence</th>
+                <th>Time (IST)</th>
+              </tr>
+            </thead>
+            <tbody id="eventsTableBody">
+              <tr><td colspan="6" class="loading">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Commands Page -->
+    <div id="page-commands" class="page">
+      <div class="page-header">
+        <h1>Send Command</h1>
+      </div>
+
+      <div class="commands-grid">
+        <!-- C2D Command -->
+        <div class="card">
+          <div class="card-header">
+            <h2>☁️ Cloud-to-Device Command</h2>
+          </div>
+          <p class="card-desc">Send a message directly to a device via Azure IoT Hub.</p>
+          <div class="form-group">
+            <label>Device ID</label>
+            <input type="text" id="cmdDeviceId" class="input" placeholder="e.g. ac-device-001" />
+          </div>
+          <div class="form-group">
+            <label>Command</label>
+            <input type="text" id="cmdCommand" class="input" placeholder="e.g. SET_TEMP, TURN_OFF" />
+          </div>
+          <div class="form-group">
+            <label>Extra Payload (JSON)</label>
+            <textarea id="cmdPayload" class="input textarea" placeholder='{"temperature": 24}'></textarea>
+          </div>
+          <button class="btn btn-primary" onclick="sendCommand()">Send Command</button>
+          <div id="cmdResult" class="result-box hidden"></div>
+        </div>
+
+        <!-- Direct Method -->
+        <div class="card">
+          <div class="card-header">
+            <h2>⚡ Invoke Direct Method</h2>
+          </div>
+          <p class="card-desc">Invoke a synchronous direct method on a device and get a response.</p>
+          <div class="form-group">
+            <label>Device ID</label>
+            <input type="text" id="methodDeviceId" class="input" placeholder="e.g. ac-device-001" />
+          </div>
+          <div class="form-group">
+            <label>Method Name</label>
+            <input type="text" id="methodName" class="input" placeholder="e.g. getStatus, reboot" />
+          </div>
+          <div class="form-group">
+            <label>Payload (JSON)</label>
+            <textarea id="methodPayload" class="input textarea" placeholder='{}'></textarea>
+          </div>
+          <button class="btn btn-primary" onclick="invokeMethod()">Invoke Method</button>
+          <div id="methodResult" class="result-box hidden"></div>
+        </div>
+
+        <!-- Log Event -->
+        <div class="card">
+          <div class="card-header">
+            <h2>📝 Log Manual Event</h2>
+          </div>
+          <p class="card-desc">Manually log an AC event to the database.</p>
+          <div class="form-group">
+            <label>Device ID</label>
+            <input type="text" id="logDeviceId" class="input" placeholder="e.g. ac-device-001" />
+          </div>
+          <div class="form-group">
+            <label>Event</label>
+            <select id="logEvent" class="input">
+              <option value="AC_ON">AC_ON</option>
+              <option value="AC_OFF">AC_OFF</option>
+              <option value="SYNC">SYNC</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Temperature (°C) <span class="optional">optional</span></label>
+            <input type="number" id="logTemp" class="input" placeholder="e.g. 24.5" step="0.1" />
+          </div>
+          <div class="form-group">
+            <label>Presence <span class="optional">optional</span></label>
+            <select id="logPresence" class="input">
+              <option value="">— not set —</option>
+              <option value="true">true</option>
+              <option value="false">false</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" onclick="logManualEvent()">Log Event</button>
+          <div id="logResult" class="result-box hidden"></div>
+        </div>
+
+        <!-- Sync Device -->
+        <div class="card">
+          <div class="card-header">
+            <h2>🔄 Sync Device</h2>
+          </div>
+          <p class="card-desc">Register or update a device configuration in MongoDB.</p>
+          <div class="form-group">
+            <label>Device ID</label>
+            <input type="text" id="syncDeviceId" class="input" placeholder="e.g. ac-device-001" />
+          </div>
+          <div class="form-group">
+            <label>Device Name</label>
+            <input type="text" id="syncDeviceName" class="input" placeholder="e.g. Living Room AC" />
+          </div>
+          <div class="form-group">
+            <label>Active Config Name</label>
+            <input type="text" id="syncConfigName" class="input" placeholder="e.g. SUMMER_MODE" />
+          </div>
+          <div class="form-group">
+            <label>Config Data (JSON) <span class="optional">optional</span></label>
+            <textarea id="syncConfigData" class="input textarea" placeholder='{"targetTemp": 24, "mode": "cool"}'></textarea>
+          </div>
+          <button class="btn btn-primary" onclick="syncDevice()">Sync Device</button>
+          <div id="syncResult" class="result-box hidden"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
