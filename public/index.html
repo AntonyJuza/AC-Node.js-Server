@@ -1,828 +1,456 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AC Automation IoT Dashboard</title>
-  <!-- Google Fonts: Inter -->
+  <title>AC Automation Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <!-- App Styles -->
   <link rel="stylesheet" href="style.css" />
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
-  <!-- ============================================================
-       TOPBAR
-  ============================================================ -->
-  <header class="topbar">
-    <div class="topbar-brand">
-      <span class="brand-icon">❄</span>
-      <span class="brand-name">AC Automation</span>
-      <span class="brand-badge">IoT</span>
-    </div>
-    <div class="topbar-search">
-      <span class="search-icon">🔍</span>
-      <input type="search" placeholder="Search devices, events..." aria-label="Search devices and events" />
-    </div>
-    <div class="topbar-right">
-      <div class="topbar-avatar" aria-label="User avatar">A</div>
-    </div>
-  </header>
-
-  <!-- ============================================================
-       SIDEBAR
-  ============================================================ -->
-  <aside class="sidebar" role="navigation" aria-label="Main navigation">
-    <div class="sidebar-section">
-      <span class="sidebar-section-label">Navigation</span>
-      <nav>
-        <a class="nav-item active" data-page="dashboard" href="#dashboard" role="menuitem">
-          <span class="nav-icon">🏠</span> Dashboard
+  <div class="app-container">
+    <!-- Sidebar -->
+    <nav class="sidebar">
+      <div class="brand">
+        <div class="brand-icon">❄</div>
+        <span>AC Cloud</span>
+      </div>
+      
+      <div class="nav-menu">
+        <div class="nav-label">Main</div>
+        <a class="nav-item active" data-target="dashboard">
+          <span>🏠</span> Dashboard
         </a>
-        <a class="nav-item" data-page="devices" href="#devices" role="menuitem">
-          <span class="nav-icon">📡</span> Devices
+        <a class="nav-item" data-target="devices">
+          <span>📱</span> Devices
         </a>
-        <a class="nav-item" data-page="events" href="#events" role="menuitem">
-          <span class="nav-icon">📋</span> Events
+        
+        <div class="nav-label">Management</div>
+        <a class="nav-item" data-target="config">
+          <span>⚙️</span> Config
         </a>
-        <a class="nav-item" data-page="commands" href="#commands" role="menuitem">
-          <span class="nav-icon">⚡</span> Commands
+        <a class="nav-item" data-target="logs">
+          <span>📋</span> Logs & Events
         </a>
-        <a class="nav-item" data-page="analytics" href="#analytics" role="menuitem">
-          <span class="nav-icon">📊</span> Analytics
+        <a class="nav-item" data-target="analytics">
+          <span>📈</span> Analytics
         </a>
-        <a class="nav-item" data-page="health" href="#health" role="menuitem">
-          <span class="nav-icon">🏥</span> Health
+        <a class="nav-item" data-target="commands">
+          <span>⚡</span> Commands
         </a>
-        <a class="nav-item" data-page="users" href="#users" role="menuitem">
-          <span class="nav-icon">👤</span> Users
+
+        <div class="nav-label">System</div>
+        <a class="nav-item" data-target="health">
+          <span>🏥</span> Backend Health
         </a>
-        <a class="nav-item" data-page="ota" href="#ota" role="menuitem">
-          <span class="nav-icon">🔧</span> OTA Update
+        <a class="nav-item" data-target="users">
+          <span>👥</span> Users
         </a>
-      </nav>
-    </div>
-    <div class="sidebar-footer">
-      <div class="server-status" id="serverStatus">
-        <span class="status-dot" id="statusDot"></span>
-        <span id="statusText">Connecting...</span>
-      </div>
-    </div>
-  </aside>
-
-  <!-- ============================================================
-       MAIN CONTENT
-  ============================================================ -->
-  <main class="main-content">
-
-    <!-- ============================================================
-         PAGE 1: DASHBOARD
-    ============================================================ -->
-    <div id="page-dashboard" class="page active">
-
-      <nav class="breadcrumb" aria-label="Breadcrumb">
-        <span>Admin</span> <span class="breadcrumb-sep">›</span> <span>Dashboard</span>
-      </nav>
-
-      <div class="page-header">
-        <div class="page-header-text">
-          <h1>Dashboard</h1>
-          <p>Real-time overview of your AC automation system.</p>
-        </div>
-        <div class="page-header-actions">
-          <button class="btn btn-primary" onclick="refreshDashboard()">↻ Refresh</button>
-        </div>
+        <a class="nav-item" data-target="ota">
+          <span>🔄</span> OTA Updates
+        </a>
       </div>
 
-      <!-- Stats Grid -->
-      <div class="stats-grid">
-        <div class="stat-card" id="statDevices">
-          <div class="stat-icon">📡</div>
-          <div class="stat-body">
-            <div class="stat-value">—</div>
-            <div class="stat-label">Total Devices</div>
-            <div class="stat-sub">Unique device IDs</div>
-          </div>
-        </div>
-        <div class="stat-card" id="statEvents">
-          <div class="stat-icon">📋</div>
-          <div class="stat-body">
-            <div class="stat-value">—</div>
-            <div class="stat-label">Total Events</div>
-            <div class="stat-sub">Last 50 logged</div>
-          </div>
-        </div>
-        <div class="stat-card" id="statAcOn">
-          <div class="stat-icon">🟢</div>
-          <div class="stat-body">
-            <div class="stat-value">—</div>
-            <div class="stat-label">AC ON Events</div>
-            <div class="stat-sub">From last 50</div>
-          </div>
-        </div>
-        <div class="stat-card accent" id="statAcOff">
-          <div class="stat-icon">🔴</div>
-          <div class="stat-body">
-            <div class="stat-value">—</div>
-            <div class="stat-label">AC OFF Events</div>
-            <div class="stat-sub">From last 50</div>
-          </div>
+      <div class="sidebar-footer">
+        <div class="server-status" id="serverStatusBox">
+          <div class="status-dot" id="serverStatusDot"></div>
+          <span id="serverStatusText">Connecting...</span>
         </div>
       </div>
+    </nav>
 
-      <!-- Dashboard Grid -->
-      <div class="dashboard-grid">
-
-        <!-- Recent Events -->
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">Recent Events</span>
-            <span class="badge badge-live">Live</span>
-          </div>
-          <div class="table-wrapper">
-            <table class="data-table" id="dashboardEventsTable">
-              <thead>
-                <tr>
-                  <th scope="col">Device ID</th>
-                  <th scope="col">Event</th>
-                  <th scope="col">Temp °C</th>
-                  <th scope="col">Presence</th>
-                  <th scope="col">Time IST</th>
-                </tr>
-              </thead>
-              <tbody id="dashboardEventsBody">
-                <tr><td colspan="5" class="table-empty">Loading...</td></tr>
-              </tbody>
-            </table>
+    <!-- Main Content Wrapper -->
+    <div class="main-wrapper">
+      
+      <!-- Topbar -->
+      <header class="topbar">
+        <div class="search-bar">
+          <span>🔍</span>
+          <input type="text" placeholder="Search devices, logs..." />
+        </div>
+        <div class="topbar-right">
+          <div class="badge badge-online">IoT Hub Active</div>
+          <div class="user-profile">
+            <div class="avatar">A</div>
+            <span>Admin</span>
           </div>
         </div>
+      </header>
 
-        <!-- Registered Devices -->
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">Registered Devices</span>
-          </div>
-          <p class="card-desc">Click to view details</p>
-          <div id="dashboardDevicesList" class="device-list">
-            <div class="loading-text">Loading...</div>
-          </div>
-        </div>
-
-      </div>
-    </div>
-    <!-- /page-dashboard -->
-
-
-    <!-- ============================================================
-         PAGE 2: DEVICES
-    ============================================================ -->
-    <div id="page-devices" class="page">
-
-      <nav class="breadcrumb" aria-label="Breadcrumb">
-        <span>Admin</span> <span class="breadcrumb-sep">›</span> <span>Devices</span>
-      </nav>
-
-      <div class="page-header">
-        <div class="page-header-text">
-          <h1>Devices</h1>
-          <p>Manage and monitor all registered AC devices.</p>
-        </div>
-        <div class="page-header-actions">
-          <button class="btn btn-primary" onclick="loadDevicesPage()">↻ Refresh</button>
-        </div>
-      </div>
-
-      <!-- Lookup Device -->
-      <div class="card">
-        <div class="card-header">
-          <span class="card-title">Lookup Device</span>
-        </div>
-        <div class="form-row">
-          <label for="deviceLookupId" class="sr-only">Device ID</label>
-          <input
-            type="text"
-            id="deviceLookupId"
-            class="input"
-            placeholder="Enter Device ID..."
-            aria-label="Device ID to look up"
-          />
-          <button class="btn btn-primary" onclick="lookupDevice()">Search</button>
-        </div>
-        <div id="deviceLookupResult" class="device-detail hidden" aria-live="polite"></div>
-      </div>
-
-      <!-- All Synced Devices -->
-      <div class="card" style="margin-top:16px;">
-        <div class="card-header">
-          <span class="card-title">All Synced Devices</span>
-        </div>
-        <p class="card-desc">Devices seen in event log</p>
-        <div id="allDevicesContainer">
-          <div class="loading-text">Loading...</div>
-        </div>
-      </div>
-
-    </div>
-    <!-- /page-devices -->
-
-
-    <!-- ============================================================
-         PAGE 3: EVENTS
-    ============================================================ -->
-    <div id="page-events" class="page">
-
-      <nav class="breadcrumb" aria-label="Breadcrumb">
-        <span>Admin</span> <span class="breadcrumb-sep">›</span> <span>Event Log</span>
-      </nav>
-
-      <div class="page-header">
-        <div class="page-header-text">
-          <h1>Event Log</h1>
-          <p>All AC events from devices via IoT Hub.</p>
-        </div>
-        <div class="page-header-actions">
-          <label class="toggle-label" for="autoRefreshToggle">
-            <input
-              type="checkbox"
-              id="autoRefreshToggle"
-              onchange="toggleAutoRefresh()"
-              aria-label="Auto-refresh every 5 seconds"
-            />
-            Auto-refresh 5s
-          </label>
-          <button class="btn btn-primary" onclick="loadEvents()">↻ Refresh</button>
-        </div>
-      </div>
-
-      <!-- Events Table Card -->
-      <div class="card">
-        <div class="card-header">
-          <span class="card-title">AC Events</span>
-          <span class="card-desc-inline">Showing last 50 events</span>
-          <span class="badge" id="eventCount">0</span>
-        </div>
-        <div class="filters">
-          <label for="eventFilter" class="sr-only">Filter events</label>
-          <input
-            type="text"
-            id="eventFilter"
-            class="input input-sm"
-            placeholder="Filter by device or event..."
-            oninput="filterEvents()"
-            aria-label="Filter events by device ID or event type"
-          />
-        </div>
-        <div class="table-wrapper">
-          <table class="data-table" id="eventsTable">
-            <thead>
-              <tr>
-                <th scope="col">ID</th>
-                <th scope="col">Device ID</th>
-                <th scope="col">Event</th>
-                <th scope="col">Temp °C</th>
-                <th scope="col">Presence</th>
-                <th scope="col">Time IST</th>
-              </tr>
-            </thead>
-            <tbody id="eventsTableBody">
-              <tr><td colspan="6" class="table-empty">Loading...</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-    </div>
-    <!-- /page-events -->
-
-
-    <!-- ============================================================
-         PAGE 4: COMMANDS
-    ============================================================ -->
-    <div id="page-commands" class="page">
-
-      <nav class="breadcrumb" aria-label="Breadcrumb">
-        <span>Admin</span> <span class="breadcrumb-sep">›</span> <span>Commands</span>
-      </nav>
-
-      <div class="page-header">
-        <div class="page-header-text">
-          <h1>Commands</h1>
-          <p>Send commands, invoke methods, log events, and sync devices.</p>
-        </div>
-      </div>
-
-      <div class="commands-grid">
-
-        <!-- Card 1: Cloud-to-Device Command -->
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">☁️ Cloud-to-Device Command</span>
-          </div>
-          <div class="form-group">
-            <label for="cmdDeviceId">Device ID</label>
-            <input type="text" id="cmdDeviceId" class="input" placeholder="e.g. device-001" />
-          </div>
-          <div class="form-group">
-            <label for="cmdCommand">Command</label>
-            <input type="text" id="cmdCommand" class="input" placeholder="e.g. AC_ON" />
-          </div>
-          <div class="form-group">
-            <label for="cmdPayload">Payload (JSON)</label>
-            <textarea id="cmdPayload" class="input textarea" rows="3" placeholder='{"key":"value"}'></textarea>
-          </div>
-          <button class="btn btn-primary" onclick="sendCommand()">Send Command</button>
-          <div id="cmdResult" class="result-box hidden" aria-live="polite"></div>
-        </div>
-
-        <!-- Card 2: Invoke Direct Method -->
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">⚡ Invoke Direct Method</span>
-          </div>
-          <div class="form-group">
-            <label for="methodDeviceId">Device ID</label>
-            <input type="text" id="methodDeviceId" class="input" placeholder="e.g. device-001" />
-          </div>
-          <div class="form-group">
-            <label for="methodName">Method Name</label>
-            <input type="text" id="methodName" class="input" placeholder="e.g. getStatus" />
-          </div>
-          <div class="form-group">
-            <label for="methodPayload">Payload (JSON)</label>
-            <textarea id="methodPayload" class="input textarea" rows="3" placeholder='{"key":"value"}'></textarea>
-          </div>
-          <button class="btn btn-primary" onclick="invokeMethod()">Invoke Method</button>
-          <div id="methodResult" class="result-box hidden" aria-live="polite"></div>
-        </div>
-
-        <!-- Card 3: Log Manual Event -->
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">📝 Log Manual Event</span>
-          </div>
-          <div class="form-group">
-            <label for="logDeviceId">Device ID</label>
-            <input type="text" id="logDeviceId" class="input" placeholder="e.g. device-001" />
-          </div>
-          <div class="form-group">
-            <label for="logEvent">Event Type</label>
-            <select id="logEvent" class="input">
-              <option value="AC_ON">AC_ON</option>
-              <option value="AC_OFF">AC_OFF</option>
-              <option value="SYNC">SYNC</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="logTemp">Temperature (°C)</label>
-            <input type="number" id="logTemp" class="input" placeholder="e.g. 24" step="0.1" />
-          </div>
-          <div class="form-group">
-            <label for="logPresence">Presence</label>
-            <select id="logPresence" class="input">
-              <option value="">—</option>
-              <option value="true">true</option>
-              <option value="false">false</option>
-            </select>
-          </div>
-          <button class="btn btn-primary" onclick="logManualEvent()">Log Event</button>
-          <div id="logResult" class="result-box hidden" aria-live="polite"></div>
-        </div>
-
-        <!-- Card 4: Sync Device -->
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">🔄 Sync Device</span>
-          </div>
-          <div class="form-group">
-            <label for="syncDeviceId">Device ID</label>
-            <input type="text" id="syncDeviceId" class="input" placeholder="e.g. device-001" />
-          </div>
-          <div class="form-group">
-            <label for="syncDeviceName">Device Name</label>
-            <input type="text" id="syncDeviceName" class="input" placeholder="e.g. Living Room AC" />
-          </div>
-          <div class="form-group">
-            <label for="syncConfigName">Config Name</label>
-            <input type="text" id="syncConfigName" class="input" placeholder="e.g. default" />
-          </div>
-          <div class="form-group">
-            <label for="syncConfigData">Config Data (JSON)</label>
-            <textarea id="syncConfigData" class="input textarea" rows="3" placeholder='{"temp":24,"mode":"cool"}'></textarea>
-          </div>
-          <button class="btn btn-primary" onclick="syncDevice()">Sync Device</button>
-          <div id="syncResult" class="result-box hidden" aria-live="polite"></div>
-        </div>
-
-      </div>
-    </div>
-    <!-- /page-commands -->
-
-
-    <!-- ============================================================
-         PAGE 5: ANALYTICS
-    ============================================================ -->
-    <div id="page-analytics" class="page">
-
-      <nav class="breadcrumb" aria-label="Breadcrumb">
-        <span>Admin</span> <span class="breadcrumb-sep">›</span> <span>Analytics</span>
-      </nav>
-
-      <div class="page-header">
-        <div class="page-header-text">
-          <h1>Analytics</h1>
-          <p>AC usage patterns and energy insights.</p>
-        </div>
-      </div>
-
-      <!-- Charts Grid -->
-      <div class="analytics-grid">
-
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">AC Usage Over Time</span>
-          </div>
-          <div class="chart-container">
-            <canvas id="chartUsage" aria-label="AC usage over time chart" role="img"></canvas>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">Daily ON/OFF Count</span>
-          </div>
-          <div class="chart-container">
-            <canvas id="chartDaily" aria-label="Daily AC ON and OFF count chart" role="img"></canvas>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">Presence Duration</span>
-          </div>
-          <div class="chart-container">
-            <canvas id="chartPresence" aria-label="Presence duration chart" role="img"></canvas>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">Power Estimation</span>
-          </div>
-          <div class="chart-container">
-            <canvas id="chartPower" aria-label="Power estimation chart" role="img"></canvas>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- Note -->
-      <div class="card note-card">
-        <p>📌 Analytics are based on logged event data. Power estimation uses mock wattage values.</p>
-      </div>
-
-    </div>
-    <!-- /page-analytics -->
-
-
-    <!-- ============================================================
-         PAGE 6: HEALTH
-    ============================================================ -->
-    <div id="page-health" class="page">
-
-      <nav class="breadcrumb" aria-label="Breadcrumb">
-        <span>Admin</span> <span class="breadcrumb-sep">›</span> <span>Backend Health</span>
-      </nav>
-
-      <div class="page-header">
-        <div class="page-header-text">
-          <h1>Backend Health</h1>
-          <p>Service status and API performance.</p>
-        </div>
-        <div class="page-header-actions">
-          <button class="btn btn-primary" onclick="refreshHealth()">↻ Refresh</button>
-        </div>
-      </div>
-
-      <!-- Health Stats -->
-      <div class="stats-grid stats-grid-3">
-        <div class="stat-card" id="healthUptime">
-          <div class="stat-icon">⏱</div>
-          <div class="stat-body">
-            <div class="stat-value">—</div>
-            <div class="stat-label">Uptime</div>
-          </div>
-        </div>
-        <div class="stat-card" id="healthLatency">
-          <div class="stat-icon">📶</div>
-          <div class="stat-body">
-            <div class="stat-value">—</div>
-            <div class="stat-label">API Latency</div>
-          </div>
-        </div>
-        <div class="stat-card" id="healthStatus">
-          <div class="stat-icon">✅</div>
-          <div class="stat-body">
-            <div class="stat-value">—</div>
-            <div class="stat-label">Overall Status</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Services -->
-      <div class="card">
-        <div class="card-header">
-          <span class="card-title">Services</span>
-        </div>
-        <div class="health-grid">
-          <div class="health-card" id="hc-mongo">
-            <div class="health-card-icon">🍃</div>
-            <div class="health-card-name">MongoDB</div>
-            <div class="health-card-status">—</div>
-          </div>
-          <div class="health-card" id="hc-postgres">
-            <div class="health-card-icon">🐘</div>
-            <div class="health-card-name">PostgreSQL</div>
-            <div class="health-card-status">—</div>
-          </div>
-          <div class="health-card" id="hc-iothub">
-            <div class="health-card-icon">☁️</div>
-            <div class="health-card-name">IoT Hub</div>
-            <div class="health-card-status">—</div>
-          </div>
-          <div class="health-card" id="hc-supabase">
-            <div class="health-card-icon">⚡</div>
-            <div class="health-card-name">Supabase</div>
-            <div class="health-card-status">—</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- API Endpoints -->
-      <div class="card" style="margin-top:16px;">
-        <div class="card-header">
-          <span class="card-title">API Endpoints</span>
-        </div>
-        <div class="table-wrapper">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th scope="col">Endpoint</th>
-                <th scope="col">Method</th>
-                <th scope="col">Status</th>
-                <th scope="col">Latency</th>
-              </tr>
-            </thead>
-            <tbody id="healthEndpointsBody">
-              <tr><td colspan="4" class="table-empty">Loading...</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-    </div>
-    <!-- /page-health -->
-
-
-    <!-- ============================================================
-         PAGE 7: USERS (Coming Soon)
-    ============================================================ -->
-    <div id="page-users" class="page">
-
-      <nav class="breadcrumb" aria-label="Breadcrumb">
-        <span>Admin</span> <span class="breadcrumb-sep">›</span> <span>Users</span>
-      </nav>
-
-      <div class="page-header">
-        <div class="page-header-text">
-          <h1>User Management</h1>
-          <p>Manage access and permissions.</p>
-        </div>
-      </div>
-
-      <div class="coming-soon-wrapper" style="position:relative;">
-
-        <!-- Mock content (blurred behind overlay) -->
-        <div class="card coming-soon-content">
-          <div class="card-header">
-            <span class="card-title">Login</span>
-          </div>
-          <div class="form-group">
-            <label for="mockEmail">Email</label>
-            <input type="email" id="mockEmail" class="input" placeholder="admin@example.com" disabled />
-          </div>
-          <div class="form-group">
-            <label for="mockPassword">Password</label>
-            <input type="password" id="mockPassword" class="input" placeholder="••••••••" disabled />
-          </div>
-          <button class="btn btn-primary" disabled>Login</button>
-
-          <div class="table-wrapper" style="margin-top:24px;">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th scope="col">User</th>
-                  <th scope="col">Role</th>
-                  <th scope="col">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>admin@example.com</td>
-                  <td><span class="badge badge-admin">Admin</span></td>
-                  <td>Active</td>
-                </tr>
-                <tr>
-                  <td>viewer@example.com</td>
-                  <td><span class="badge badge-viewer">Viewer</span></td>
-                  <td>Active</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- Coming Soon Overlay -->
-        <div class="coming-soon" aria-label="Coming soon">
-          <div class="coming-soon-badge">Coming Soon</div>
-        </div>
-
-      </div>
-    </div>
-    <!-- /page-users -->
-
-
-    <!-- ============================================================
-         PAGE 8: OTA UPDATE (Coming Soon)
-    ============================================================ -->
-    <div id="page-ota" class="page">
-
-      <nav class="breadcrumb" aria-label="Breadcrumb">
-        <span>Admin</span> <span class="breadcrumb-sep">›</span> <span>OTA Update</span>
-      </nav>
-
-      <div class="page-header">
-        <div class="page-header-text">
-          <h1>OTA Firmware Update</h1>
-          <p>Push firmware updates to devices.</p>
-        </div>
-      </div>
-
-      <div class="coming-soon-wrapper" style="position:relative;">
-
-        <!-- Mock content (blurred behind overlay) -->
-        <div class="card coming-soon-content">
-          <div class="card-header">
-            <span class="card-title">Upload Firmware</span>
+      <!-- Pages Container -->
+      <main class="content-area">
+        
+        <!-- ================= PAGE 1: DASHBOARD ================= -->
+        <div id="page-dashboard" class="page active">
+          <div class="page-header">
+            <div class="page-title">
+              <h1>Dashboard</h1>
+              <p>System overview and real-time status.</p>
+            </div>
+            <button class="btn btn-secondary" onclick="loadDashboard()">↻ Refresh</button>
           </div>
 
-          <!-- Upload Zone -->
-          <div class="upload-zone" aria-label="Firmware upload area">
-            <div class="upload-zone-icon">📦</div>
-            <p>Drop firmware <code>.bin</code> here</p>
-            <p class="upload-zone-sub">or click to browse</p>
-          </div>
-
-          <!-- Device Select -->
-          <div class="form-group" style="margin-top:16px;">
-            <label for="otaDeviceSelect">Target Device</label>
-            <select id="otaDeviceSelect" class="input" disabled>
-              <option value="">Select a device...</option>
-              <option value="device-001">device-001</option>
-              <option value="device-002">device-002</option>
-            </select>
-          </div>
-
-          <!-- Progress Bar -->
-          <div class="form-group">
-            <label>Upload Progress</label>
-            <div class="progress-bar-track" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
-              <div class="progress-bar-fill" style="width:0%"></div>
+          <div class="stats-grid">
+            <div class="card stat-card">
+              <div class="stat-header"><span>Total Devices</span><span>📱</span></div>
+              <div class="stat-value" id="dashTotalDev">0</div>
+              <div class="stat-trend trend-up">All Synced</div>
+            </div>
+            <div class="card stat-card">
+              <div class="stat-header"><span>Online Devices</span><span>🟢</span></div>
+              <div class="stat-value" id="dashOnlineDev">0</div>
+              <div class="stat-trend trend-up" id="dashOfflineDev">0 Offline</div>
+            </div>
+            <div class="card stat-card">
+              <div class="stat-header"><span>AC Units ON</span><span>❄️</span></div>
+              <div class="stat-value" id="dashAcOn">0</div>
+              <div class="stat-trend">Based on last events</div>
+            </div>
+            <div class="card stat-card">
+              <div class="stat-header"><span>Total Events (24h)</span><span>📊</span></div>
+              <div class="stat-value" id="dashTotalEvents">0</div>
+              <div class="stat-trend trend-up">Database logged</div>
             </div>
           </div>
 
-          <!-- Firmware History -->
-          <div class="table-wrapper" style="margin-top:24px;">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th scope="col">Version</th>
-                  <th scope="col">Device</th>
-                  <th scope="col">Date</th>
-                  <th scope="col">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>v1.2.0</td>
-                  <td>device-001</td>
-                  <td>2024-01-15</td>
-                  <td><span class="badge badge-success">Success</span></td>
-                </tr>
-                <tr>
-                  <td>v1.1.5</td>
-                  <td>device-002</td>
-                  <td>2024-01-10</td>
-                  <td><span class="badge badge-success">Success</span></td>
-                </tr>
-              </tbody>
-            </table>
+          <div class="grid-2">
+            <!-- Quick Devices -->
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title">Device Quick Status</span>
+                <button class="btn btn-secondary" onclick="navTo('devices')">View All</button>
+              </div>
+              <div id="dashDeviceList">
+                <div style="padding: 20px; text-align: center; color: var(--text-muted)">Loading devices...</div>
+              </div>
+            </div>
+
+            <!-- Recent Events -->
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title">Recent Activity</span>
+                <span class="badge badge-online">Live</span>
+              </div>
+              <div class="table-container">
+                <table>
+                  <thead><tr><th>Device</th><th>Event</th><th>Time</th></tr></thead>
+                  <tbody id="dashEventsTable">
+                    <tr><td colspan="3" style="text-align: center;">Loading...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- Coming Soon Overlay -->
-        <div class="coming-soon" aria-label="Coming soon">
-          <div class="coming-soon-badge">Coming Soon</div>
+        <!-- ================= PAGE 2: DEVICES ================= -->
+        <div id="page-devices" class="page">
+          <div class="page-header">
+            <div class="page-title">
+              <h1>Device Management</h1>
+              <p>Manage all registered ESP nodes.</p>
+            </div>
+            <button class="btn btn-primary" onclick="loadDevices()">↻ Refresh List</button>
+          </div>
+
+          <div class="card">
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Device ID</th>
+                    <th>Name</th>
+                    <th>Status</th>
+                    <th>Firmware</th>
+                    <th>Last Seen</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="devicesTableBody">
+                  <tr><td colspan="6" style="text-align: center;">Loading...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
+
+        <!-- ================= PAGE 4: CONFIG ================= -->
+        <div id="page-config" class="page">
+          <div class="page-header">
+            <div class="page-title">
+              <h1>Config Management</h1>
+              <p>Dynamic configuration pushed to devices.</p>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title">Current Global Config</span>
+                <button class="btn btn-primary">Push to All</button>
+              </div>
+              <div class="json-editor" id="configEditor">
+{
+  "protocol": "LG",
+  "bits": 28,
+  "tempOffset": 2,
+  "defaultMode": "COOL",
+  "autoOffTimer": 3600
+}</div>
+              <div style="margin-top: 16px; display: flex; gap: 12px;">
+                <button class="btn btn-secondary">Upload JSON</button>
+                <button class="btn btn-primary">Save Changes</button>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title">Version History</span>
+              </div>
+              <div class="table-container">
+                <table>
+                  <thead><tr><th>Version</th><th>Date</th><th>Action</th></tr></thead>
+                  <tbody>
+                    <tr><td>v1.4</td><td>Today, 10:00 AM</td><td><span class="badge badge-online">Active</span></td></tr>
+                    <tr><td>v1.3</td><td>Yesterday</td><td><button class="btn btn-secondary">Rollback</button></td></tr>
+                    <tr><td>v1.2</td><td>May 1</td><td><button class="btn btn-secondary">Rollback</button></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= PAGE 5: LOGS ================= -->
+        <div id="page-logs" class="page">
+          <div class="page-header">
+            <div class="page-title">
+              <h1>System Logs & Events</h1>
+              <p>Raw event data from PostgreSQL.</p>
+            </div>
+            <div style="display:flex; gap: 12px;">
+              <input type="text" class="input" style="width: 200px;" placeholder="Filter by ID..." id="logFilter" oninput="filterLogs()"/>
+              <button class="btn btn-secondary" onclick="loadLogs()">↻ Refresh</button>
+            </div>
+          </div>
+          
+          <div class="card log-terminal" id="logTerminal">
+             <div style="color: #888;">Connecting to log stream...</div>
+          </div>
+        </div>
+
+        <!-- ================= PAGE 6: ANALYTICS ================= -->
+        <div id="page-analytics" class="page">
+          <div class="page-header">
+            <div class="page-title">
+              <h1>Analytics</h1>
+              <p>System usage and power estimation.</p>
+            </div>
+          </div>
+          
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-header"><span class="card-title">AC Usage Time (Hours)</span></div>
+              <div class="chart-container"><canvas id="chartUsage"></canvas></div>
+            </div>
+            <div class="card">
+              <div class="card-header"><span class="card-title">Presence Duration</span></div>
+              <div class="chart-container"><canvas id="chartPresence"></canvas></div>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-header"><span class="card-title">Daily ON/OFF Count</span></div>
+              <div class="chart-container"><canvas id="chartOnOff"></canvas></div>
+            </div>
+            <div class="card">
+              <div class="card-header"><span class="card-title">Power Estimation (kWh)</span></div>
+              <div class="chart-container"><canvas id="chartPower"></canvas></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= PAGE 7: HEALTH ================= -->
+        <div id="page-health" class="page">
+          <div class="page-header">
+            <div class="page-title">
+              <h1>Backend Health</h1>
+              <p>System metrics and connection status.</p>
+            </div>
+            <button class="btn btn-secondary" onclick="checkHealth()">↻ Check Now</button>
+          </div>
+
+          <div class="grid-3">
+            <div class="card">
+              <h3>Node.js API</h3>
+              <div style="font-size: 32px; font-weight: 700; color: var(--success); margin: 12px 0;" id="healthApiStatus">Online</div>
+              <p style="color: var(--text-secondary)">Latency: <span id="healthLatency">--</span> ms</p>
+            </div>
+            <div class="card">
+              <h3>PostgreSQL</h3>
+              <div style="font-size: 32px; font-weight: 700; color: var(--success); margin: 12px 0;">Connected</div>
+              <p style="color: var(--text-secondary)">Events DB</p>
+            </div>
+            <div class="card">
+              <h3>MongoDB</h3>
+              <div style="font-size: 32px; font-weight: 700; color: var(--success); margin: 12px 0;">Connected</div>
+              <p style="color: var(--text-secondary)">Devices DB</p>
+            </div>
+          </div>
+          <div class="card">
+             <div class="card-header"><span class="card-title">System Metrics (Mock)</span></div>
+             <p>RAM Usage: 145 MB / 512 MB</p>
+             <p>CPU Load: 4%</p>
+             <p>Uptime: 14 days, 5 hours</p>
+          </div>
+        </div>
+
+        <!-- ================= PAGE 8: USERS ================= -->
+        <div id="page-users" class="page">
+          <div class="card coming-soon-wrapper" style="min-height: 400px;">
+             <div class="coming-soon-overlay">
+               <h2>👥 User Management</h2>
+               <p>Coming Soon</p>
+               <button class="btn btn-primary" style="margin-top: 16px;" onclick="navTo('dashboard')">Back to Dashboard</button>
+             </div>
+             <!-- Mock Background -->
+             <div class="table-container" style="opacity: 0.3; pointer-events: none;">
+                <table>
+                  <thead><tr><th>User</th><th>Role</th><th>Status</th></tr></thead>
+                  <tbody>
+                    <tr><td>admin@local.host</td><td>Admin</td><td>Active</td></tr>
+                    <tr><td>viewer@local.host</td><td>Read-Only</td><td>Active</td></tr>
+                  </tbody>
+                </table>
+             </div>
+          </div>
+        </div>
+
+        <!-- ================= PAGE 9: OTA ================= -->
+        <div id="page-ota" class="page">
+          <div class="card coming-soon-wrapper" style="min-height: 400px;">
+             <div class="coming-soon-overlay">
+               <h2>🔄 OTA Firmware Updates</h2>
+               <p>Coming Soon</p>
+               <button class="btn btn-primary" style="margin-top: 16px;" onclick="navTo('dashboard')">Back to Dashboard</button>
+             </div>
+             <!-- Mock Background -->
+             <div style="opacity: 0.3; pointer-events: none;">
+                <h3>Upload Firmware (.bin)</h3>
+                <div style="border: 2px dashed #5483B3; padding: 40px; text-align: center; border-radius: 8px; margin: 20px 0;">
+                   Drop firmware file here
+                </div>
+             </div>
+          </div>
+        </div>
+
+        <!-- ================= PAGE 10: COMMANDS ================= -->
+        <div id="page-commands" class="page">
+          <div class="page-header">
+            <div class="page-title">
+              <h1>Commands & Testing</h1>
+              <p>Manual testing tools for API routes.</p>
+            </div>
+          </div>
+          
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-header"><span class="card-title">☁️ C2D Command</span></div>
+              <div class="form-group">
+                <label>Device ID</label>
+                <input type="text" id="cmdDeviceId" class="input" placeholder="ac-device-001" />
+              </div>
+              <div class="form-group">
+                <label>Command Name</label>
+                <input type="text" id="cmdName" class="input" placeholder="SET_TEMP" />
+              </div>
+              <div class="form-group">
+                <label>Payload (JSON)</label>
+                <textarea id="cmdPayload" class="input">{"target": 24}</textarea>
+              </div>
+              <button class="btn btn-primary" onclick="sendCommand()">Send</button>
+            </div>
+
+             <div class="card">
+              <div class="card-header"><span class="card-title">⚡ Direct Method</span></div>
+              <div class="form-group">
+                <label>Device ID</label>
+                <input type="text" id="methodDeviceId" class="input" placeholder="ac-device-001" />
+              </div>
+              <div class="form-group">
+                <label>Method Name</label>
+                <input type="text" id="methodName" class="input" placeholder="getStatus" />
+              </div>
+              <button class="btn btn-primary" onclick="invokeMethod()">Invoke</button>
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+
+    <!-- ================= SLIDE IN DEVICE DETAIL ================= -->
+    <div class="side-panel-overlay" id="deviceOverlay" onclick="closeDevicePanel()"></div>
+    <div class="side-panel" id="devicePanel">
+      <div class="side-panel-header">
+        <div>
+          <h2 id="panelDevName">Device Name</h2>
+          <p style="color: var(--text-secondary); font-size: 13px;" id="panelDevId">id: ---</p>
+        </div>
+        <button class="side-panel-close" onclick="closeDevicePanel()">×</button>
+      </div>
+      
+      <div class="side-panel-content">
+        <!-- Live Status Cards -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+           <div class="card" style="padding: 16px;">
+             <div style="color: var(--text-secondary); font-size: 12px; margin-bottom: 8px;">AC STATUS</div>
+             <div style="font-size: 24px; font-weight: bold; color: var(--accent-pale);" id="panelAcState">--</div>
+           </div>
+           <div class="card" style="padding: 16px;">
+             <div style="color: var(--text-secondary); font-size: 12px; margin-bottom: 8px;">ROOM TEMP</div>
+             <div style="font-size: 24px; font-weight: bold; color: var(--accent-pale);" id="panelTemp">-- °C</div>
+           </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="card">
+          <h3 style="margin-bottom: 16px;">Controls</h3>
+          <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+             <button class="btn btn-primary" style="flex: 1;" onclick="sendQuickCommand('TURN_ON')">Turn ON</button>
+             <button class="btn btn-secondary" style="flex: 1; border-color: var(--danger); color: var(--danger);" onclick="sendQuickCommand('TURN_OFF')">Turn OFF</button>
+          </div>
+          <div style="display: flex; gap: 12px; margin-top: 12px;">
+             <button class="btn btn-secondary" style="flex: 1;" onclick="sendQuickCommand('REBOOT')">Reboot ESP</button>
+             <button class="btn btn-secondary" style="flex: 1;" onclick="sendQuickCommand('LEARN')">Learn IR</button>
+          </div>
+        </div>
+
+        <!-- System Info -->
+        <div class="card">
+          <h3 style="margin-bottom: 16px;">System Info</h3>
+          <table style="width: 100%; font-size: 13px;">
+             <tr><td style="padding: 8px 0; border-bottom: 1px solid var(--card-border); color: var(--text-secondary);">IP Address</td><td style="text-align: right;" id="panelIp">192.168.1.xxx</td></tr>
+             <tr><td style="padding: 8px 0; border-bottom: 1px solid var(--card-border); color: var(--text-secondary);">WiFi RSSI</td><td style="text-align: right;" id="panelRssi">-65 dBm</td></tr>
+             <tr><td style="padding: 8px 0; border-bottom: 1px solid var(--card-border); color: var(--text-secondary);">Heap Memory</td><td style="text-align: right;" id="panelHeap">42 KB</td></tr>
+             <tr><td style="padding: 8px 0; color: var(--text-secondary);">Firmware</td><td style="text-align: right;" id="panelFw">v1.0.2</td></tr>
+          </table>
+        </div>
+        
+        <!-- Delete -->
+        <button class="btn btn-danger" style="width: 100%; justify-content: center;">Delete Device</button>
 
       </div>
     </div>
-    <!-- /page-ota -->
 
-  </main>
-  <!-- /main-content -->
-
-
-  <!-- ============================================================
-       DETAIL PANEL (slide-in)
-  ============================================================ -->
-  <aside id="deviceDetailPanel" class="detail-panel" role="complementary" aria-label="Device detail panel">
-    <div class="detail-panel-header">
-      <h3 id="panelDeviceName">Device Details</h3>
-      <button class="detail-panel-close" onclick="closeDetailPanel()" aria-label="Close detail panel">✕</button>
-    </div>
-    <div class="detail-panel-body">
-
-      <!-- Device Info -->
-      <section class="panel-section">
-        <h4 class="panel-section-title">Device Info</h4>
-        <div class="detail-row">
-          <span class="detail-label">Device ID</span>
-          <span class="detail-value" id="panelDeviceId">—</span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">Name</span>
-          <span class="detail-value" id="panelDeviceNameVal">—</span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">Config</span>
-          <span class="detail-value" id="panelConfig">—</span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">Updated</span>
-          <span class="detail-value" id="panelUpdated">—</span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">Created</span>
-          <span class="detail-value" id="panelCreated">—</span>
-        </div>
-      </section>
-
-      <!-- Configuration Data -->
-      <section class="panel-section">
-        <h4 class="panel-section-title">Configuration Data</h4>
-        <pre id="panelConfigJson" class="config-json">—</pre>
-      </section>
-
-      <!-- Controls -->
-      <section class="panel-section">
-        <h4 class="panel-section-title">Controls</h4>
-        <div class="panel-controls">
-          <button class="btn btn-success" onclick="panelSendCommand('AC_ON')">AC ON</button>
-          <button class="btn btn-danger" onclick="panelSendCommand('AC_OFF')">AC OFF</button>
-          <button class="btn btn-secondary" onclick="panelForceSync()">Force Sync</button>
-          <button class="btn btn-warning" onclick="panelSendCommand('RESTART')">Restart</button>
-        </div>
-        <div id="panelResult" class="result-box hidden" aria-live="polite"></div>
-      </section>
-
-    </div>
-  </aside>
-
-  <!-- ============================================================
-       CONFIRM MODAL
-  ============================================================ -->
-  <div id="confirmModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
-    <div class="modal-box">
-      <div class="modal-header">
-        <h3 id="confirmTitle">Confirm Action</h3>
-        <button class="modal-close" onclick="closeModal()" aria-label="Close modal">✕</button>
-      </div>
-      <p id="confirmMessage" class="modal-message">Are you sure you want to proceed?</p>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
-        <button class="btn btn-danger" id="confirmOkBtn">Confirm</button>
-      </div>
-    </div>
   </div>
 
-  <!-- ============================================================
-       APP SCRIPT
-  ============================================================ -->
+  <div id="toast-container"></div>
   <script src="app.js"></script>
-
 </body>
 </html>
