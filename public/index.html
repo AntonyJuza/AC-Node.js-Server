@@ -4,29 +4,61 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AC Automation Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <!-- Sidebar -->
-  <nav class="sidebar">
-    <div class="sidebar-header">
-      <span class="logo">❄️</span>
-      <span class="logo-text">AC Automation</span>
+
+  <!-- ===== Top Bar ===== -->
+  <header class="topbar">
+    <div class="topbar-brand">
+      <div class="brand-icon">❄</div>
+      <span class="brand-name">AC Automation</span>
+      <span class="brand-badge">IoT</span>
     </div>
-    <ul class="nav-links">
-      <li><a href="#" class="nav-item active" data-page="dashboard">
-        <span class="icon">📊</span> Dashboard
-      </a></li>
-      <li><a href="#" class="nav-item" data-page="devices">
-        <span class="icon">📡</span> Devices
-      </a></li>
-      <li><a href="#" class="nav-item" data-page="events">
-        <span class="icon">📋</span> Event Log
-      </a></li>
-      <li><a href="#" class="nav-item" data-page="commands">
-        <span class="icon">⚡</span> Send Command
-      </a></li>
-    </ul>
+    <div class="topbar-search">
+      <span class="topbar-search-icon">🔍</span>
+      <input type="text" placeholder="Search..." id="globalSearch" />
+    </div>
+    <div class="topbar-right">
+      <div class="topbar-avatar" title="Admin">A</div>
+    </div>
+  </header>
+
+  <!-- ===== Sidebar ===== -->
+  <nav class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Menu</div>
+      <ul class="nav-links">
+        <li>
+          <a href="#" class="nav-item active" data-page="dashboard">
+            <span class="nav-icon">🏠</span>
+            <span>Dashboard</span>
+          </a>
+        </li>
+        <li>
+          <a href="#" class="nav-item" data-page="devices">
+            <span class="nav-icon">📡</span>
+            <span>Devices</span>
+          </a>
+        </li>
+        <li>
+          <a href="#" class="nav-item" data-page="events">
+            <span class="nav-icon">📋</span>
+            <span>Event Log</span>
+          </a>
+        </li>
+        <li>
+          <a href="#" class="nav-item" data-page="commands">
+            <span class="nav-icon">⚡</span>
+            <span>Commands</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+
     <div class="sidebar-footer">
       <div class="server-status" id="serverStatus">
         <span class="status-dot" id="statusDot"></span>
@@ -35,57 +67,76 @@
     </div>
   </nav>
 
-  <!-- Main Content -->
+  <!-- ===== Main Content ===== -->
   <main class="main-content">
-    <!-- Dashboard Page -->
+
+    <!-- ===== Dashboard ===== -->
     <div id="page-dashboard" class="page active">
+      <div class="breadcrumb">
+        <span>Admin</span>
+        <span class="breadcrumb-sep">›</span>
+        <span class="breadcrumb-current">Dashboard</span>
+      </div>
       <div class="page-header">
-        <h1>Dashboard</h1>
-        <button class="btn btn-secondary" onclick="refreshDashboard()">↻ Refresh</button>
+        <div class="page-title">
+          <h1>Dashboard</h1>
+          <p>Overview of your AC automation system.</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-secondary" onclick="refreshDashboard()">↻ Refresh</button>
+        </div>
       </div>
 
       <div class="stats-grid">
         <div class="stat-card">
-          <div class="stat-icon">📡</div>
-          <div class="stat-info">
-            <div class="stat-value" id="statDevices">—</div>
-            <div class="stat-label">Devices Synced</div>
+          <div class="stat-header">
+            <span class="stat-label">Devices Synced</span>
+            <span class="stat-icon-sm">📡</span>
           </div>
+          <div class="stat-value" id="statDevices">—</div>
+          <div class="stat-sub">Unique device IDs in log</div>
         </div>
         <div class="stat-card">
-          <div class="stat-icon">📋</div>
-          <div class="stat-info">
-            <div class="stat-value" id="statEvents">—</div>
-            <div class="stat-label">Total Events (last 50)</div>
+          <div class="stat-header">
+            <span class="stat-label">Total Events</span>
+            <span class="stat-icon-sm">📋</span>
           </div>
+          <div class="stat-value" id="statEvents">—</div>
+          <div class="stat-sub">Last 50 logged events</div>
         </div>
         <div class="stat-card">
-          <div class="stat-icon">🟢</div>
-          <div class="stat-info">
-            <div class="stat-value" id="statAcOn">—</div>
-            <div class="stat-label">AC ON Events</div>
+          <div class="stat-header">
+            <span class="stat-label">AC ON Events</span>
+            <span class="stat-icon-sm">🟢</span>
           </div>
+          <div class="stat-value" id="statAcOn">—</div>
+          <div class="stat-sub">From last 50 events</div>
         </div>
-        <div class="stat-card">
-          <div class="stat-icon">🔴</div>
-          <div class="stat-info">
-            <div class="stat-value" id="statAcOff">—</div>
-            <div class="stat-label">AC OFF Events</div>
+        <div class="stat-card accent">
+          <div class="stat-header">
+            <span class="stat-label">AC OFF Events</span>
+            <span class="stat-icon-sm">🔴</span>
           </div>
+          <div class="stat-value" id="statAcOff">—</div>
+          <div class="stat-sub">From last 50 events</div>
         </div>
       </div>
 
       <div class="dashboard-grid">
+        <!-- Recent Events -->
         <div class="card">
           <div class="card-header">
-            <h2>Recent Events</h2>
-            <span class="badge" id="recentEventsBadge">Live</span>
+            <div>
+              <h2>Recent Events</h2>
+              <p>Latest 10 events from all devices</p>
+            </div>
+            <span class="badge">Live</span>
           </div>
           <div class="table-wrapper">
-            <table class="data-table" id="dashboardEventsTable">
+            <table class="data-table">
               <thead>
                 <tr>
-                  <th>Device</th>
+                  <th>Device ID</th>
                   <th>Event</th>
                   <th>Temp (°C)</th>
                   <th>Presence</th>
@@ -99,9 +150,13 @@
           </div>
         </div>
 
+        <!-- Devices Panel -->
         <div class="card">
           <div class="card-header">
-            <h2>Registered Devices</h2>
+            <div>
+              <h2>Registered Devices</h2>
+              <p>Click to view details</p>
+            </div>
           </div>
           <div id="dashboardDevicesList" class="device-list">
             <div class="loading">Loading...</div>
@@ -110,11 +165,21 @@
       </div>
     </div>
 
-    <!-- Devices Page -->
+    <!-- ===== Devices ===== -->
     <div id="page-devices" class="page">
+      <div class="breadcrumb">
+        <span>Admin</span>
+        <span class="breadcrumb-sep">›</span>
+        <span class="breadcrumb-current">Devices</span>
+      </div>
       <div class="page-header">
-        <h1>Devices</h1>
-        <button class="btn btn-secondary" onclick="loadDevicesPage()">↻ Refresh</button>
+        <div class="page-title">
+          <h1>Devices</h1>
+          <p>View and manage registered AC devices.</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-secondary" onclick="loadDevicesPage()">↻ Refresh</button>
+        </div>
       </div>
 
       <div class="card">
@@ -122,16 +187,18 @@
           <h2>Lookup Device</h2>
         </div>
         <div class="form-row">
-          <input type="text" id="deviceLookupId" class="input" placeholder="Enter Device ID" />
+          <input type="text" id="deviceLookupId" class="input" placeholder="Enter Device ID (e.g. ac-device-001)" />
           <button class="btn btn-primary" onclick="lookupDevice()">Search</button>
         </div>
         <div id="deviceLookupResult" class="device-detail hidden"></div>
       </div>
 
-      <div class="card" style="margin-top:1.5rem">
+      <div class="card" style="margin-top:16px">
         <div class="card-header">
-          <h2>All Synced Devices</h2>
-          <span class="hint">Devices that have synced at least once</span>
+          <div>
+            <h2>All Synced Devices</h2>
+            <p>Devices that have appeared in the event log</p>
+          </div>
         </div>
         <div id="allDevicesContainer">
           <div class="loading">Loading...</div>
@@ -139,10 +206,18 @@
       </div>
     </div>
 
-    <!-- Events Page -->
+    <!-- ===== Event Log ===== -->
     <div id="page-events" class="page">
+      <div class="breadcrumb">
+        <span>Admin</span>
+        <span class="breadcrumb-sep">›</span>
+        <span class="breadcrumb-current">Event Log</span>
+      </div>
       <div class="page-header">
-        <h1>Event Log</h1>
+        <div class="page-title">
+          <h1>Event Log</h1>
+          <p>All AC events logged from devices via IoT Hub.</p>
+        </div>
         <div class="header-actions">
           <label class="toggle-label">
             <input type="checkbox" id="autoRefreshToggle" onchange="toggleAutoRefresh()" />
@@ -154,17 +229,22 @@
 
       <div class="card">
         <div class="card-header">
-          <h2>AC Events (Last 50)</h2>
+          <div>
+            <h2>AC Events</h2>
+            <p>Showing last 50 events</p>
+          </div>
           <span class="badge" id="eventCount">0 events</span>
         </div>
         <div class="filters">
-          <input type="text" id="eventFilter" class="input input-sm" placeholder="Filter by device ID or event..." oninput="filterEvents()" />
+          <input type="text" id="eventFilter" class="input input-sm"
+            placeholder="Filter by device ID or event type..."
+            oninput="filterEvents()" />
         </div>
         <div class="table-wrapper">
-          <table class="data-table" id="eventsTable">
+          <table class="data-table">
             <thead>
               <tr>
-                <th>#</th>
+                <th>ID</th>
                 <th>Device ID</th>
                 <th>Event</th>
                 <th>Temperature (°C)</th>
@@ -180,13 +260,22 @@
       </div>
     </div>
 
-    <!-- Commands Page -->
+    <!-- ===== Commands ===== -->
     <div id="page-commands" class="page">
+      <div class="breadcrumb">
+        <span>Admin</span>
+        <span class="breadcrumb-sep">›</span>
+        <span class="breadcrumb-current">Commands</span>
+      </div>
       <div class="page-header">
-        <h1>Send Command</h1>
+        <div class="page-title">
+          <h1>Commands</h1>
+          <p>Send commands, invoke methods, log events, and sync devices.</p>
+        </div>
       </div>
 
       <div class="commands-grid">
+
         <!-- C2D Command -->
         <div class="card">
           <div class="card-header">
@@ -202,7 +291,7 @@
             <input type="text" id="cmdCommand" class="input" placeholder="e.g. SET_TEMP, TURN_OFF" />
           </div>
           <div class="form-group">
-            <label>Extra Payload (JSON)</label>
+            <label>Extra Payload (JSON) <span class="optional">optional</span></label>
             <textarea id="cmdPayload" class="input textarea" placeholder='{"temperature": 24}'></textarea>
           </div>
           <button class="btn btn-primary" onclick="sendCommand()">Send Command</button>
@@ -224,7 +313,7 @@
             <input type="text" id="methodName" class="input" placeholder="e.g. getStatus, reboot" />
           </div>
           <div class="form-group">
-            <label>Payload (JSON)</label>
+            <label>Payload (JSON) <span class="optional">optional</span></label>
             <textarea id="methodPayload" class="input textarea" placeholder='{}'></textarea>
           </div>
           <button class="btn btn-primary" onclick="invokeMethod()">Invoke Method</button>
@@ -236,13 +325,13 @@
           <div class="card-header">
             <h2>📝 Log Manual Event</h2>
           </div>
-          <p class="card-desc">Manually log an AC event to the database.</p>
+          <p class="card-desc">Manually log an AC event to the PostgreSQL database.</p>
           <div class="form-group">
             <label>Device ID</label>
             <input type="text" id="logDeviceId" class="input" placeholder="e.g. ac-device-001" />
           </div>
           <div class="form-group">
-            <label>Event</label>
+            <label>Event Type</label>
             <select id="logEvent" class="input">
               <option value="AC_ON">AC_ON</option>
               <option value="AC_OFF">AC_OFF</option>
@@ -290,8 +379,10 @@
           <button class="btn btn-primary" onclick="syncDevice()">Sync Device</button>
           <div id="syncResult" class="result-box hidden"></div>
         </div>
+
       </div>
     </div>
+
   </main>
 
   <script src="app.js"></script>
