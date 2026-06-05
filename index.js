@@ -1,4 +1,5 @@
 require('dotenv').config();
+require("./src/mqtt/subscriber");
 const path = require('path');
 const express = require('express');
 const cors = require('cors');
