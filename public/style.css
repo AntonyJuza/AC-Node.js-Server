@@ -1,22 +1,22 @@
 :root {
-  --bg-main: #0b0f19;
-  --bg-card: rgba(17, 24, 39, 0.7);
-  --bg-sidebar: rgba(15, 23, 42, 0.85);
-  --border-glass: rgba(255, 255, 255, 0.08);
-  --shadow-premium: 0 20px 40px -10px rgba(0, 0, 0, 0.7), inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
-  --shadow-glow-green: 0 0 20px rgba(16, 185, 129, 0.3);
-  --shadow-glow-blue: 0 0 20px rgba(59, 130, 246, 0.3);
+  --bg-main: #f0f3f6;
+  --bg-card: rgba(255, 255, 255, 0.75);
+  --bg-sidebar: rgba(255, 255, 255, 0.85);
+  --border-glass: rgba(255, 255, 255, 0.45);
+  --shadow-premium: 0 10px 30px -5px rgba(0, 0, 0, 0.04), 0 4px 12px -2px rgba(0, 0, 0, 0.02);
+  --shadow-glow-green: 0 4px 15px rgba(34, 197, 94, 0.2);
+  --shadow-glow-blue: 0 4px 15px rgba(59, 130, 246, 0.2);
   
-  --primary: #f8fafc;
-  --secondary: #94a3b8;
-  --accent: #3b82f6;
-  --accent-light: #60a5fa;
-  --success: #10b981;
-  --success-bg: rgba(16, 185, 129, 0.15);
+  --primary: #1e293b;
+  --secondary: #64748b;
+  --accent: #2563eb;
+  --accent-light: #3b82f6;
+  --success: #22c55e;
+  --success-bg: #e6f9ed;
   --danger: #ef4444;
-  --danger-bg: rgba(239, 68, 68, 0.15);
+  --danger-bg: #fdf2f2;
   --warning: #f59e0b;
-  --warning-bg: rgba(245, 158, 11, 0.15);
+  --warning-bg: #fef8e8;
   
   --font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -34,8 +34,8 @@
 body {
   background-color: var(--bg-main);
   background-image: 
-    radial-gradient(circle at 15% 50%, rgba(59, 130, 246, 0.12), transparent 25%),
-    radial-gradient(circle at 85% 30%, rgba(16, 185, 129, 0.1), transparent 25%);
+    radial-gradient(circle at 10% 20%, rgba(224, 231, 255, 0.5) 0%, transparent 40%),
+    radial-gradient(circle at 90% 80%, rgba(209, 250, 229, 0.4) 0%, transparent 45%);
   color: var(--primary);
   display: flex;
   height: 100vh;
@@ -76,8 +76,8 @@ body {
   justify-content: space-between;
   padding: 12px 24px;
   height: 64px;
-  background: rgba(17, 24, 39, 0.6);
-  backdrop-filter: blur(20px);
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(15px);
   border: 1px solid var(--border-glass);
   border-radius: 16px;
   box-shadow: var(--shadow-premium);
@@ -108,11 +108,10 @@ body {
 /* Top Pill Menu Tabs */
 .nav-pills {
   display: flex;
-  background: rgba(255, 255, 255, 0.05);
+  background: #e2e8f0;
   padding: 4px;
   border-radius: 12px;
   gap: 2px;
-  border: 1px solid var(--border-glass);
 }
 
 .nav-item {
@@ -132,10 +131,9 @@ body {
 }
 
 .nav-item.active {
-  background: rgba(59, 130, 246, 0.2);
-  color: #fff;
-  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.2);
-  border: 1px solid rgba(59, 130, 246, 0.3);
+  background: #ffffff;
+  color: var(--primary);
+  box-shadow: 0 4px 10px -2px rgba(0, 0, 0, 0.05);
 }
 
 .topbar-right {
@@ -147,8 +145,8 @@ body {
 .search-bar {
   display: flex;
   align-items: center;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--border-glass);
+  background: #f1f5f9;
+  border: 1px solid transparent;
   border-radius: 12px;
   padding: 6px 12px;
   width: 220px;
@@ -156,8 +154,8 @@ body {
 }
 
 .search-bar:focus-within {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(59, 130, 246, 0.5);
+  background: #ffffff;
+  border-color: #cbd5e1;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
@@ -175,13 +173,12 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: rgba(255, 255, 255, 0.05);
+  background: #ffffff;
   padding: 4px 12px 4px 4px;
   border-radius: 20px;
-  border: 1px solid var(--border-glass);
+  border: 1px solid #e2e8f0;
   font-weight: 500;
   font-size: 13px;
-  color: var(--primary);
 }
 
 .avatar {
