@@ -1,5 +1,6 @@
 const mqttClient = require("./mqttClient");
 const { pool } = require("../../database/postgres");
+const appEmitter = require("../events/eventEmitter");
 
 mqttClient.on("connect", () => {
     console.log("[MQTT] Connected");
@@ -37,6 +38,7 @@ mqttClient.on("message", async (topic, message) => {
             `, [deviceId]);
 
             console.log(`[DB] Heartbeat updated: ${deviceId}`);
+            appEmitter.emit('device_update');
         }
 
         if (eventType === "status") {
@@ -58,6 +60,7 @@ mqttClient.on("message", async (topic, message) => {
             ]);
 
             console.log(`[DB] Status updated: ${deviceId}`);
+            appEmitter.emit('device_update');
         }
 
     } catch (err) {

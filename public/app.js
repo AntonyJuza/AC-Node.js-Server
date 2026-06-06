@@ -607,7 +607,13 @@ async function invokeMethod() {
 window.addEventListener('DOMContentLoaded', () => {
   loadDashboard();
   checkHealth();
-  // Poll dashboard data and health check every 15s for live updates
-  setInterval(loadDashboard, 15000);
+  
+  // SSE for live UI updates
+  const sse = new EventSource('/api/stream');
+  sse.onmessage = () => {
+    loadDashboard();
+  };
+  
+  // Health check polling
   setInterval(checkHealth, 30000);
 });

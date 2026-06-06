@@ -9,6 +9,7 @@ const { initPostgresDB } = require('./database/postgres');
 
 const deviceRoutes = require('./routes/deviceRoutes');
 const eventRoutes = require('./routes/eventRoutes');
+const appEmitter = require('./src/events/eventEmitter');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -34,6 +35,22 @@ app.use('/api/events', eventRoutes);
 // Health check root endpoint (keep JSON for API clients, UI is served via static)
 app.get('/status', (req, res) => {
     res.json({ status: 'active', message: 'AC Automation Node.js Backend is running (Hybrid Architecture)' });
+});
+
+// SSE endpoint for live UI updates
+app.get('/api/stream', (req, res) => {
+    res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive'
+    });
+    
+    const sendUpdate = () => res.write(`data: update\n\n`);
+    appEmitter.on('device_update', sendUpdate);
+    
+    req.on('close', () => {
+        appEmitter.off('device_update', sendUpdate);
+    });
 });
 
 // Start the server
