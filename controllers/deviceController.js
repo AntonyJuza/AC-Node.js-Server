@@ -1,5 +1,6 @@
 const Device = require('../models/Device');
 const { sendCommandToDevice, invokeDeviceMethod } = require('../iotHubService');
+const { publishCommand } = require('../src/mqtt/publisher');
 
 const syncDevice = async (req, res) => {
     try {
@@ -69,4 +70,19 @@ const invokeMethod = async (req, res) => {
     }
 };
 
-module.exports = { syncDevice, getDevice, sendCommand, invokeMethod };
+const powerOn = async (req, res) => {
+    try {
+        const { deviceId } = req.params;
+        publishCommand(deviceId, 'power_on');
+        return res.status(200).json({
+            success: true,
+            deviceId
+        });
+    } catch (err) {
+        console.error('[DEVICE SERVER ERROR]', err);
+        return res.status(500).json({ error: 'Failed to power on device' });
+    }
+};
+
+module.exports = { syncDevice, getDevice, sendCommand, invokeMethod, powerOn };
+
