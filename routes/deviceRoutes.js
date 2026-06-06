@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const deviceController = require('../controllers/deviceController');
 
+router.post('/:deviceId/power-on', deviceController.powerOn);
 router.post('/sync', deviceController.syncDevice);
 router.get('/:deviceId', deviceController.getDevice);
 router.post('/:deviceId/command', deviceController.sendCommand);
