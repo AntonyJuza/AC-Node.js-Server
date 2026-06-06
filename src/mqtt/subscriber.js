@@ -1,12 +1,15 @@
 const mqttClient = require("./mqttClient");
 const { pool } = require("../../database/postgres");
 const appEmitter = require("../events/eventEmitter");
+const Device = require("../../models/Device");
 
 mqttClient.on("connect", () => {
     console.log("[MQTT] Connected");
 
     mqttClient.subscribe("ac/+/status");
     mqttClient.subscribe("ac/+/heartbeat");
+    mqttClient.subscribe("ac/+/event");
+    mqttClient.subscribe("ac/+/sync");
 
     console.log("[MQTT] Subscribed to topics");
 });
@@ -23,7 +26,6 @@ mqttClient.on("message", async (topic, message) => {
         const eventType = parts[2];
 
         if (eventType === "heartbeat") {
-
             await pool.query(`
                 INSERT INTO devices (
                     device_id,
@@ -42,7 +44,6 @@ mqttClient.on("message", async (topic, message) => {
         }
 
         if (eventType === "status") {
-
             await pool.query(`
                 INSERT INTO devices (
                     device_id,
@@ -60,6 +61,39 @@ mqttClient.on("message", async (topic, message) => {
             ]);
 
             console.log(`[DB] Status updated: ${deviceId}`);
+            appEmitter.emit('device_update');
+        }
+
+        if (eventType === "event") {
+            const { event, temperature, presence } = payload;
+            const istTime = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+            console.log(`[MQTT LOG] [IST ${istTime}] Received event from ${deviceId}: ${event}`);
+
+            await pool.query(`
+                INSERT INTO ac_events (device_id, event, temperature, presence)
+                VALUES ($1, $2, $3, $4)
+            `, [
+                deviceId,
+                event,
+                temperature !== undefined ? temperature : null,
+                presence !== undefined ? presence : null
+            ]);
+
+            console.log(`[DB] Event logged: ${deviceId} -> ${event}`);
+            appEmitter.emit('device_update');
+        }
+
+        if (eventType === "sync") {
+            const { activeConfigName } = payload;
+            console.log(`[MQTT SYNC] Received sync from ${deviceId}: configName=${activeConfigName}`);
+
+            await Device.findOneAndUpdate(
+                { deviceId },
+                { $set: { activeConfigName: activeConfigName || 'NONE' } },
+                { returnDocument: 'after', upsert: true }
+            );
+
+            console.log(`[DB] Device sync updated: ${deviceId}`);
             appEmitter.emit('device_update');
         }
 
