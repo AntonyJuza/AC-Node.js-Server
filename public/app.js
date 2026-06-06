@@ -1,12 +1,17 @@
 const API_BASE = ''; // relative since we are serving from same origin
 
+// Cache variables
+let devicesList = [];
+let eventsLogs = [];
+let currentFilter = 'all';
+let selectedDeviceId = null;
+
 // ================= ROUTING =================
 document.querySelectorAll('.nav-item').forEach(item => {
   item.addEventListener('click', (e) => {
-    // skip clicks on nav items without data-target (like headers)
     if (!item.dataset.target) return;
     
-    // Update active nav
+    // Update active nav pill
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     item.classList.add('active');
 
@@ -22,12 +27,18 @@ function navTo(pageId) {
   if (page) {
     page.classList.add('active');
     
-    // Load page specific data
-    if (pageId === 'dashboard') loadDashboard();
-    else if (pageId === 'devices') loadDevices();
-    else if (pageId === 'logs') loadLogs();
-    else if (pageId === 'analytics') renderCharts();
-    else if (pageId === 'health') checkHealth();
+    // Load page-specific data
+    if (pageId === 'dashboard') {
+      loadDashboard();
+    } else if (pageId === 'devices') {
+      loadDevices();
+    } else if (pageId === 'logs') {
+      loadLogs();
+    } else if (pageId === 'analytics') {
+      renderCharts();
+    } else if (pageId === 'health') {
+      checkHealth();
+    }
   }
 }
 
@@ -45,7 +56,7 @@ function showToast(message, type = 'success') {
   container.appendChild(toast);
   
   setTimeout(() => {
-    toast.style.animation = 'slideOut 0.3s ease forwards';
+    toast.style.animation = 'toastOut 0.3s ease forwards';
     setTimeout(() => toast.remove(), 300);
   }, 3000);
 }
@@ -61,132 +72,243 @@ async function fetchApi(endpoint, options = {}) {
     return await res.json();
   } catch (error) {
     console.error(`[API] Failed to fetch ${endpoint}:`, error);
-    showToast(`Failed to fetch data`, 'error');
+    showToast(`Failed to fetch data from ${endpoint}`, 'error');
     return null;
   }
 }
 
 // ================= DASHBOARD =================
 async function loadDashboard() {
-  const events = await fetchApi('/api/events');
-  if (!events) return;
-
-  const logs = events.data || [];
-  
-  // Stats
-  const uniqueDevices = new Set(logs.map(e => e.device_id));
-  document.getElementById('dashTotalDev').innerText = uniqueDevices.size;
-  document.getElementById('dashOnlineDev').innerText = uniqueDevices.size; // Mock online count
-  document.getElementById('dashTotalEvents').innerText = logs.length;
-  
-  const acOn = logs.filter(e => e.event_type === 'AC_ON').length;
-  document.getElementById('dashAcOn').innerText = acOn;
-
-  // Recent Events Table
-  const tbody = document.getElementById('dashEventsTable');
-  tbody.innerHTML = '';
-  
-  const recent = logs.slice(0, 5);
-  if (recent.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;">No recent events</td></tr>`;
+  // 1. Fetch devices list
+  const devResponse = await fetchApi('/api/devices');
+  if (devResponse && devResponse.success) {
+    devicesList = devResponse.data || [];
   } else {
-    recent.forEach(log => {
-      let eventBadge = `<span class="badge badge-on">${log.event_type}</span>`;
-      if (log.event_type === 'AC_OFF') eventBadge = `<span class="badge badge-off">${log.event_type}</span>`;
-      else if (log.event_type === 'SYNC') eventBadge = `<span class="badge badge-online">${log.event_type}</span>`;
-      
-      const time = new Date(log.created_at).toLocaleTimeString();
-      tbody.innerHTML += `
-        <tr>
-          <td><strong style="color:var(--accent-pale)">${log.device_id}</strong></td>
-          <td>${eventBadge}</td>
-          <td style="color:var(--text-secondary)">${time}</td>
-        </tr>
-      `;
-    });
+    devicesList = [];
   }
 
-  // Quick Devices List
-  const devList = document.getElementById('dashDeviceList');
-  devList.innerHTML = '';
-  
-  Array.from(uniqueDevices).slice(0, 4).forEach(id => {
-    // Find latest event for this device to guess status
-    const devEvents = logs.filter(e => e.device_id === id);
-    let isAcOn = false;
-    let lastTemp = '--';
-    
-    if (devEvents.length > 0) {
-      isAcOn = devEvents[0].event_type === 'AC_ON';
-      if (devEvents[0].temperature) lastTemp = devEvents[0].temperature;
-    }
+  // 2. Fetch events logs
+  const eventsResponse = await fetchApi('/api/events');
+  if (eventsResponse) {
+    eventsLogs = eventsResponse.data || [];
+  } else {
+    eventsLogs = [];
+  }
 
-    devList.innerHTML += `
-      <div class="device-item" onclick="openDevicePanel('${id}')">
-        <div class="dev-info-main">
-          <div class="dev-icon">📱</div>
-          <div>
-            <div style="font-weight: 600; color: var(--text-primary);">${id}</div>
-            <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">Temp: ${lastTemp}°C</div>
-          </div>
+  // 3. Update dashboard counters
+  const totalDevCount = devicesList.length;
+  const onlineDevCount = devicesList.filter(d => d.online).length;
+  const offlineDevCount = totalDevCount - onlineDevCount;
+  const acOnCount = devicesList.filter(d => d.powerState).length;
+
+  document.getElementById('dashTotalDev').innerText = totalDevCount;
+  document.getElementById('dashOnlineDev').innerText = onlineDevCount;
+  document.getElementById('dashOfflineDev').innerText = `${offlineDevCount} Offline`;
+  document.getElementById('dashAcOn').innerText = acOnCount;
+  document.getElementById('dashTotalEvents').innerText = eventsLogs.length;
+  
+  // Set cycle count from stats
+  document.getElementById('cycleCountVal').innerText = eventsLogs.filter(e => e.event_type === 'AC_ON' || e.event_type === 'AC_OFF').length;
+
+  // 4. Render left operations devices list
+  renderOperationsList();
+
+  // 5. Update Map Nodes based on selected device (default to first device if none selected)
+  if (!selectedDeviceId && devicesList.length > 0) {
+    selectDevice(devicesList[0].deviceId);
+  } else if (selectedDeviceId) {
+    // refresh current selection
+    selectDevice(selectedDeviceId);
+  } else {
+    updateSchematicMap(null);
+  }
+}
+
+function renderOperationsList() {
+  const listContainer = document.getElementById('dashDeviceList');
+  listContainer.innerHTML = '';
+
+  const filtered = devicesList.filter(d => {
+    if (currentFilter === 'online') return d.online;
+    if (currentFilter === 'offline') return !d.online;
+    return true;
+  });
+
+  if (filtered.length === 0) {
+    listContainer.innerHTML = `<div style="padding: 24px; text-align: center; color: var(--secondary)">No devices in this category</div>`;
+    return;
+  }
+
+  filtered.forEach(d => {
+    const isSelected = d.deviceId === selectedDeviceId ? 'selected' : '';
+    const statusText = d.online ? 'Online' : 'Offline';
+    const statusBadge = d.online ? '<span class="badge badge-online">Online</span>' : '<span class="badge badge-offline">Offline</span>';
+    const acBadge = d.powerState ? '<span class="badge badge-ac-on">AC ON</span>' : '<span class="badge badge-ac-off">AC OFF</span>';
+    
+    // Simulate battery life percentage or load RSSI representation
+    const wifiSig = d.configData && d.configData.wifi ? d.configData.wifi : (d.online ? -65 : 0);
+    const signalPercent = d.online ? Math.min(100, Math.max(10, (100 + wifiSig) * 1.5)) : 0;
+    const isSignalLow = signalPercent < 40;
+
+    listContainer.innerHTML += `
+      <div class="ops-device-card ${isSelected}" onclick="selectDevice('${d.deviceId}')">
+        <div class="device-card-top">
+          <span class="device-card-name">${d.deviceName}</span>
+          ${statusBadge}
         </div>
-        <div style="display:flex; align-items:center; gap: 12px;">
-          ${isAcOn ? '<span class="badge badge-online">AC ON</span>' : '<span class="badge badge-off">AC OFF</span>'}
-          <span style="color: var(--text-muted)">❯</span>
+        <div class="device-card-detail">
+          <span>ID: ${d.deviceId}</span>
+          ${acBadge}
+        </div>
+        <div class="battery-progress-box">
+          <span class="battery-label">WiFi Signal</span>
+          <div class="battery-bar-container">
+            <div class="battery-bar-fill" style="width: ${signalPercent}%; background-color: ${isSignalLow ? 'var(--danger)' : 'var(--success)'};"></div>
+          </div>
+          <span style="font-size:10px; font-weight:600; color:var(--secondary)">${d.online ? wifiSig + 'dBm' : '--'}</span>
         </div>
       </div>
     `;
   });
 }
 
-// ================= DEVICES =================
-async function loadDevices() {
-  const events = await fetchApi('/api/events');
-  if (!events) return;
-  const logs = events.data || [];
-  const uniqueDevices = new Set(logs.map(e => e.device_id));
+function filterOpsList(type) {
+  currentFilter = type;
+  document.getElementById('tabOpsAll').classList.remove('active');
+  document.getElementById('tabOpsOnline').classList.remove('active');
+  document.getElementById('tabOpsOffline').classList.remove('active');
+  
+  if (type === 'all') document.getElementById('tabOpsAll').classList.add('active');
+  if (type === 'online') document.getElementById('tabOpsOnline').classList.add('active');
+  if (type === 'offline') document.getElementById('tabOpsOffline').classList.add('active');
+  
+  renderOperationsList();
+}
 
-  const tbody = document.getElementById('devicesTableBody');
-  tbody.innerHTML = '';
+function selectDevice(deviceId) {
+  selectedDeviceId = deviceId;
+  
+  // Highlight card in left panel list
+  document.querySelectorAll('.ops-device-card').forEach(card => {
+    card.classList.remove('selected');
+  });
+  renderOperationsList(); // refresh selected state visual
 
-  if (uniqueDevices.size === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;">No devices found</td></tr>`;
+  // Find the selected device object
+  const device = devicesList.find(d => d.deviceId === deviceId);
+  updateSchematicMap(device);
+}
+
+function updateSchematicMap(device) {
+  const deviceNode = document.getElementById('schemaDeviceNode');
+  const path1 = document.getElementById('line1');
+  const path2 = document.getElementById('line2');
+
+  if (!device) {
+    document.getElementById('schemaDeviceName').innerText = 'No Device Selected';
+    document.getElementById('schemaDeviceTemp').innerText = '-- °C';
+    document.getElementById('schemaDeviceState').innerText = 'Offline';
+    document.getElementById('schemaDeviceDot').className = 'node-status-dot inactive';
+    document.getElementById('schemaAcReceiverDot').className = 'node-status-dot inactive';
+    document.getElementById('schemaAcStateText').innerText = 'OFF';
+    path1.className.baseVal = 'schema-path';
+    path2.className.baseVal = 'schema-path';
     return;
   }
 
-  uniqueDevices.forEach(id => {
-    // Mock Data for fields we don't have
-    const devEvents = logs.filter(e => e.device_id === id);
-    const lastSeen = devEvents.length > 0 ? new Date(devEvents[0].created_at).toLocaleString() : 'Unknown';
+  // Update center node
+  document.getElementById('schemaDeviceName').innerText = device.deviceName;
+  document.getElementById('schemaDeviceTemp').innerText = device.online ? '24.2 °C' : '-- °C'; // mock temperature reading
+  document.getElementById('schemaDeviceState').innerText = device.online ? 'Connected' : 'Offline';
+  
+  // Update status dots
+  const devDot = document.getElementById('schemaDeviceDot');
+  const acDot = document.getElementById('schemaAcReceiverDot');
+  
+  if (device.online) {
+    devDot.className = 'node-status-dot active';
+    path1.className.baseVal = 'schema-path active';
+  } else {
+    devDot.className = 'node-status-dot inactive';
+    path1.className.baseVal = 'schema-path';
+  }
+
+  if (device.powerState) {
+    acDot.className = 'node-status-dot active';
+    document.getElementById('schemaAcStateText').innerText = 'COOL ON';
+    path2.className.baseVal = 'schema-path active';
+  } else {
+    acDot.className = 'node-status-dot inactive';
+    document.getElementById('schemaAcStateText').innerText = 'OFF';
+    path2.className.baseVal = 'schema-path';
+  }
+
+  // Bind click action on the node to open full details side-panel
+  deviceNode.onclick = () => openDevicePanel(device.deviceId);
+}
+
+// ================= DEVICES MANAGEMENT =================
+async function loadDevices() {
+  const devResponse = await fetchApi('/api/devices');
+  const tbody = document.getElementById('devicesTableBody');
+  tbody.innerHTML = '';
+
+  if (!devResponse || !devResponse.success || devResponse.data.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;">No devices found. Synchronize your ESP32 device.</td></tr>`;
+    return;
+  }
+
+  devicesList = devResponse.data;
+  
+  devicesList.forEach(d => {
+    const statusBadge = d.online 
+      ? '<span class="badge badge-online">🟢 Online</span>' 
+      : '<span class="badge badge-offline">🔴 Offline</span>';
+      
+    const lastSeenTime = d.lastSeen 
+      ? new Date(d.lastSeen).toLocaleString() 
+      : 'Never';
 
     tbody.innerHTML += `
       <tr>
-        <td><strong>${id}</strong></td>
-        <td style="color:var(--text-secondary)">Smart AC Node</td>
-        <td><span class="badge badge-online">Online</span></td>
-        <td>v1.0.2</td>
-        <td style="font-size: 12px; color:var(--text-secondary)">${lastSeen}</td>
+        <td><strong>${d.deviceId}</strong></td>
+        <td>${d.deviceName}</td>
+        <td>${statusBadge}</td>
+        <td><code style="background:#f1f5f9; padding:2px 6px; border-radius:4px;">${d.activeConfigName}</code></td>
+        <td>${lastSeenTime}</td>
         <td>
-           <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;" onclick="openDevicePanel('${id}')">Details</button>
+           <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 11px;" onclick="openDevicePanel('${d.deviceId}')">Inspect Details</button>
         </td>
       </tr>
     `;
   });
 }
 
-// ================= DEVICE PANEL =================
+// ================= DEVICE SLIDE-IN PANEL =================
 let currentPanelDeviceId = null;
 
 function openDevicePanel(deviceId) {
+  const device = devicesList.find(d => d.deviceId === deviceId);
+  if (!device) return;
+
   currentPanelDeviceId = deviceId;
-  document.getElementById('panelDevName').innerText = 'Smart AC Node';
-  document.getElementById('panelDevId').innerText = `id: ${deviceId}`;
+  document.getElementById('panelDevName').innerText = device.deviceName;
+  document.getElementById('panelDevId').innerText = `Device Unique ID: ${device.deviceId}`;
   
-  // Mock live data update
-  document.getElementById('panelAcState').innerText = Math.random() > 0.5 ? 'ON' : 'OFF';
-  document.getElementById('panelAcState').style.color = document.getElementById('panelAcState').innerText === 'ON' ? 'var(--success)' : 'var(--text-secondary)';
-  document.getElementById('panelTemp').innerText = (22 + Math.random() * 5).toFixed(1) + ' °C';
+  // Power & Temp
+  const pAc = document.getElementById('panelAcState');
+  pAc.innerText = device.powerState ? 'ON' : 'OFF';
+  pAc.style.color = device.powerState ? 'var(--success)' : 'var(--secondary)';
   
+  document.getElementById('panelTemp').innerText = device.online ? '24.2 °C' : '-- °C';
+  
+  // NVM / Settings
+  document.getElementById('panelIp').innerText = device.online ? '192.168.1.104' : '--';
+  document.getElementById('panelRssi').innerText = device.online ? (device.configData && device.configData.wifi ? device.configData.wifi + ' dBm' : '-65 dBm') : '--';
+  document.getElementById('panelHeap').innerText = device.online ? '184 KB' : '--';
+  document.getElementById('panelFw').innerText = device.firmwareVersion || 'v1.0.0';
+
+  // Open overlay & panel
   document.getElementById('deviceOverlay').classList.add('show');
   document.getElementById('devicePanel').classList.add('open');
 }
@@ -199,31 +321,54 @@ function closeDevicePanel() {
 
 async function sendQuickCommand(cmd) {
   if (!currentPanelDeviceId) return;
-  showToast(`Sending ${cmd} to ${currentPanelDeviceId}...`, 'warning');
+  
+  let targetCmd = cmd;
+  if (cmd === 'TURN_ON') targetCmd = 'power_on';
+  if (cmd === 'TURN_OFF') targetCmd = 'power_off';
+
+  showToast(`Sending ${targetCmd} to ${currentPanelDeviceId}...`, 'warning');
   
   try {
-    const res = await fetch(`${API_BASE}/api/devices/${currentPanelDeviceId}/command`, {
+    // Determine whether to call power-on endpoint or default command endpoint
+    const url = targetCmd === 'power_on' 
+      ? `/api/devices/${currentPanelDeviceId}/power-on` 
+      : `/api/devices/${currentPanelDeviceId}/command`;
+      
+    const payload = targetCmd === 'power_on' 
+      ? {} 
+      : { command: targetCmd };
+
+    const res = await fetch(`${API_BASE}${url}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ command: cmd })
+      body: JSON.stringify(payload)
     });
     const data = await res.json();
-    if (data.success) {
-      showToast(`Command ${cmd} sent successfully!`);
+    
+    if (res.ok && (data.success || data.message)) {
+      showToast(`Command ${targetCmd} published!`);
+      // Optimistic state change update
+      const dev = devicesList.find(d => d.deviceId === currentPanelDeviceId);
+      if (dev) {
+        if (targetCmd === 'power_on') dev.powerState = true;
+        if (targetCmd === 'power_off') dev.powerState = false;
+        selectDevice(currentPanelDeviceId);
+        openDevicePanel(currentPanelDeviceId); // refresh panel values
+      }
     } else {
       showToast(`Command failed: ${data.error || 'Unknown error'}`, 'error');
     }
   } catch(e) {
-    showToast('Failed to reach server', 'error');
+    showToast('Failed to connect to backend API server', 'error');
   }
 }
 
-// ================= LOGS =================
+// ================= LOGS STREAMING =================
 let allLogs = [];
 
 async function loadLogs() {
   const terminal = document.getElementById('logTerminal');
-  terminal.innerHTML = '<div style="color: #888;">Fetching logs...</div>';
+  terminal.innerHTML = '<div style="color: #94a3b8;">Loading database logs...</div>';
   
   const events = await fetchApi('/api/events');
   if (!events) return;
@@ -237,7 +382,7 @@ function renderLogs(logs) {
   terminal.innerHTML = '';
   
   if (logs.length === 0) {
-    terminal.innerHTML = '<div style="color: #888;">No logs found.</div>';
+    terminal.innerHTML = '<div style="color: #94a3b8;">No logged actions recorded.</div>';
     return;
   }
 
@@ -250,14 +395,14 @@ function renderLogs(logs) {
     
     let extra = '';
     if (log.temperature) extra += ` Temp: ${log.temperature}°C`;
-    if (log.presence !== null) extra += ` Presence: ${log.presence}`;
+    if (log.presence !== null && log.presence !== undefined) extra += ` Presence: ${log.presence}`;
 
     terminal.innerHTML += `
       <div class="log-line">
         <span class="log-time">[${time}]</span>
         <span class="log-id">[${log.device_id}]</span>
         <span class="${typeClass}"> ${log.event_type}</span>
-        <span style="color:#aaa">${extra}</span>
+        <span style="color:#cbd5e1">${extra}</span>
       </div>
     `;
   });
@@ -272,80 +417,109 @@ function filterLogs() {
   renderLogs(filtered);
 }
 
-// ================= ANALYTICS (Charts) =================
+// ================= ANALYTICS =================
 let chartsRendered = false;
+let chartUsageRef = null;
+let chartPresenceRef = null;
+let chartOnOffRef = null;
+let chartPowerRef = null;
 
 function renderCharts() {
   if (chartsRendered || typeof Chart === 'undefined') return;
   
-  Chart.defaults.color = '#7DA0CA';
-  Chart.defaults.borderColor = 'rgba(84, 131, 179, 0.1)';
+  // Set default styles for light theme
+  Chart.defaults.color = '#64748b';
+  Chart.defaults.borderColor = 'rgba(226, 232, 240, 0.6)';
   
   const commonOptions = {
     responsive: true,
     maintainAspectRatio: false,
-    plugins: { legend: { display: false } }
+    plugins: { legend: { display: false } },
+    scales: {
+      y: {
+        grid: { drawBorder: false },
+        ticks: { font: { size: 10 } }
+      },
+      x: {
+        grid: { display: false },
+        ticks: { font: { size: 10 } }
+      }
+    }
   };
 
-  // Usage Chart
-  new Chart(document.getElementById('chartUsage').getContext('2d'), {
+  // 1. Workload Chart (line chart with green/blue gradient)
+  const ctxUsage = document.getElementById('chartUsage').getContext('2d');
+  const gradient1 = ctxUsage.createLinearGradient(0, 0, 0, 180);
+  gradient1.addColorStop(0, 'rgba(59, 130, 246, 0.2)');
+  gradient1.addColorStop(1, 'rgba(59, 130, 246, 0.0)');
+
+  chartUsageRef = new Chart(ctxUsage, {
     type: 'line',
     data: {
-      labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+      labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '24:00'],
       datasets: [{
-        label: 'Hours',
-        data: [4, 6, 3, 8, 5, 12, 10],
-        borderColor: '#C1E8FF',
-        backgroundColor: 'rgba(193, 232, 255, 0.2)',
+        data: [15, 20, 45, 68, 55, 40, 25],
+        borderColor: '#3b82f6',
+        borderWidth: 2,
+        backgroundColor: gradient1,
         fill: true,
-        tension: 0.4
+        tension: 0.4,
+        pointRadius: 0
       }]
     },
     options: commonOptions
   });
 
-  // Presence Chart
-  new Chart(document.getElementById('chartPresence').getContext('2d'), {
+  // 2. Active Control Cycles (bar chart)
+  const ctxOnOff = document.getElementById('chartOnOff').getContext('2d');
+  chartOnOffRef = new Chart(ctxOnOff, {
     type: 'bar',
     data: {
       labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
       datasets: [{
-        label: 'Hours detected',
-        data: [8, 9, 8, 10, 8, 14, 16],
-        backgroundColor: '#5483B3',
-        borderRadius: 4
+        data: [4, 6, 2, 8, 5, 10, 7],
+        backgroundColor: '#10b981',
+        borderRadius: 4,
+        barThickness: 12
       }]
     },
     options: commonOptions
   });
 
-  // ON/OFF Count
-  new Chart(document.getElementById('chartOnOff').getContext('2d'), {
+  // 3. Presence Detection (bar chart)
+  const ctxPresence = document.getElementById('chartPresence').getContext('2d');
+  chartPresenceRef = new Chart(ctxPresence, {
     type: 'bar',
     data: {
       labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
       datasets: [{
-        label: 'Cycles',
-        data: [2, 4, 1, 3, 2, 5, 4],
-        backgroundColor: '#22c55e',
-        borderRadius: 4
+        data: [8, 9, 7, 12, 10, 14, 13],
+        backgroundColor: '#4f46e5',
+        borderRadius: 6,
+        barThickness: 20
       }]
     },
     options: commonOptions
   });
 
-  // Power
-  new Chart(document.getElementById('chartPower').getContext('2d'), {
+  // 4. Power Estimation (line chart)
+  const ctxPower = document.getElementById('chartPower').getContext('2d');
+  const gradient2 = ctxPower.createLinearGradient(0, 0, 0, 240);
+  gradient2.addColorStop(0, 'rgba(16, 185, 129, 0.25)');
+  gradient2.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
+
+  chartPowerRef = new Chart(ctxPower, {
     type: 'line',
     data: {
       labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
       datasets: [{
-        label: 'kWh',
-        data: [6, 9, 4.5, 12, 7.5, 18, 15],
-        borderColor: '#f59e0b',
-        backgroundColor: 'rgba(245, 158, 11, 0.2)',
+        data: [5.4, 7.2, 3.8, 9.6, 6.5, 12.4, 10.8],
+        borderColor: '#10b981',
+        borderWidth: 2,
+        backgroundColor: gradient2,
         fill: true,
-        tension: 0.4
+        tension: 0.4,
+        pointBackgroundColor: '#10b981'
       }]
     },
     options: commonOptions
@@ -368,21 +542,19 @@ async function checkHealth() {
       document.getElementById('healthLatency').innerText = Math.round(end - start);
       
       // Update sidebar status
-      document.getElementById('serverStatusText').innerText = 'Server Online';
+      document.getElementById('serverStatusText').innerText = 'Gateway Connected';
       document.getElementById('serverStatusDot').style.background = 'var(--success)';
-      document.getElementById('serverStatusDot').style.boxShadow = '0 0 8px var(--success)';
     }
   } catch(e) {
     document.getElementById('healthApiStatus').innerText = 'Offline';
     document.getElementById('healthApiStatus').style.color = 'var(--danger)';
     
-    document.getElementById('serverStatusText').innerText = 'Server Offline';
+    document.getElementById('serverStatusText').innerText = 'Server Disconnected';
     document.getElementById('serverStatusDot').style.background = 'var(--danger)';
-    document.getElementById('serverStatusDot').style.boxShadow = '0 0 8px var(--danger)';
   }
 }
 
-// ================= COMMANDS PAGE =================
+// ================= MANUAL TESTING COMMANDS =================
 async function sendCommand() {
   const id = document.getElementById('cmdDeviceId').value;
   const cmd = document.getElementById('cmdName').value;
@@ -407,9 +579,9 @@ async function sendCommand() {
       body: JSON.stringify({ command: cmd, payload })
     });
     const data = await res.json();
-    if (data.success) showToast('Command sent!');
+    if (res.ok) showToast('Command published successfully!');
     else showToast(`Failed: ${data.error}`, 'error');
-  } catch(e) { showToast('Network error', 'error'); }
+  } catch(e) { showToast('Network connection error', 'error'); }
 }
 
 async function invokeMethod() {
@@ -426,15 +598,16 @@ async function invokeMethod() {
       body: JSON.stringify({ methodName: method, payload: {} })
     });
     const data = await res.json();
-    if (data.success) showToast(`Success: Response status ${data.status}`);
+    if (res.ok) showToast(`Success: Method ${method} executed!`);
     else showToast(`Failed: ${data.error}`, 'error');
-  } catch(e) { showToast('Network error', 'error'); }
+  } catch(e) { showToast('Network connection error', 'error'); }
 }
 
 // ================= INIT =================
 window.addEventListener('DOMContentLoaded', () => {
   loadDashboard();
   checkHealth();
-  // Poll health every 30s
+  // Poll dashboard data and health check every 15s for live updates
+  setInterval(loadDashboard, 15000);
   setInterval(checkHealth, 30000);
 });
