@@ -1,26 +1,18 @@
-const User = require('../models/User');
+module.exports = async (req, res, next) => {
+  const { deviceId } = req.params;
+  const user = req.user;
 
-const verifyDeviceOwnership = async (req, res, next) => {
-    try {
-        const { deviceId } = req.params;
-        const { userId } = req.user;  // Set by requireAuth
+  if (!user) {
+    return res.status(401).send({ error: 'You must be logged in.' });
+  }
 
-        if (!deviceId) {
-            return res.status(400).json({ error: 'Missing deviceId parameter' });
-        }
+  if (!deviceId) {
+    return res.status(400).send({ error: 'Device ID is required.' });
+  }
 
-        const user = await User.findById(userId);
-        if (!user || !user.devices.includes(deviceId)) {
-            return res.status(403).json({
-                error: 'You do not have permission to control or view this device'
-            });
-        }
+  if (!user.devices.includes(deviceId)) {
+    return res.status(403).send({ error: 'Forbidden. You do not own this device.' });
+  }
 
-        next();
-    } catch (err) {
-        console.error('[OWNERSHIP MIDDLEWARE ERROR]', err);
-        return res.status(500).json({ error: 'Internal Server Error' });
-    }
+  next();
 };
-
-module.exports = verifyDeviceOwnership;

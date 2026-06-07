@@ -1,20 +1,27 @@
 const jwt = require('jsonwebtoken');
+const mongoose = require('mongoose');
+const User = require('../models/User');
 
-const requireAuth = (req, res, next) => {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({ error: 'Authentication required' });
-    }
+module.exports = async (req, res, next) => {
+  const { authorization } = req.headers;
 
-    const token = authHeader.split(' ')[1];
-    try {
-        const secret = process.env.JWT_SECRET || 'default_jwt_secret_key_change_in_production_12345';
-        const decoded = jwt.verify(token, secret);
-        req.user = decoded;  // { userId, email }
-        next();
-    } catch (err) {
-        return res.status(401).json({ error: 'Invalid or expired token' });
+  if (!authorization) {
+    return res.status(401).send({ error: 'You must be logged in.' });
+  }
+
+  const token = authorization.replace('Bearer ', '');
+  try {
+    const payload = jwt.verify(token, process.env.JWT_SECRET);
+    const { userId } = payload;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(401).send({ error: 'User not found.' });
     }
+    
+    req.user = user;
+    next();
+  } catch (err) {
+    return res.status(401).send({ error: 'Invalid token.' });
+  }
 };
-
-module.exports = requireAuth;
