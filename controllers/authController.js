@@ -24,7 +24,7 @@ exports.register = async (req, res) => {
     await user.save();
 
     const token = generateToken(user._id);
-    res.send({ token, user: { id: user._id, name: user.name, email: user.email } });
+    res.send({ success: true, token, user: { id: user._id, name: user.name, email: user.email } });
   } catch (err) {
     console.error("REGISTER ERROR:", err);
     res.status(500).json({
@@ -52,7 +52,7 @@ exports.login = async (req, res) => {
     }
 
     const token = generateToken(user._id);
-    res.send({ token, user: { id: user._id, name: user.name, email: user.email } });
+    res.send({ success: true, token, user: { id: user._id, name: user.name, email: user.email } });
   } catch (err) {
     return res.status(500).send({ error: err.message });
   }
