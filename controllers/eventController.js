@@ -29,9 +29,7 @@ const logEvent = async (req, res) => {
 
 const getEvents = async (req, res) => {
     try {
-        const { userId } = req.user;
-        const user = await User.findById(userId);
-        if (!user) return res.status(404).json({ error: 'User not found' });
+        const user = req.user;
 
         const userDeviceIds = user.devices || [];
         if (userDeviceIds.length === 0) {

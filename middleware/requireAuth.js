@@ -20,6 +20,7 @@ module.exports = async (req, res, next) => {
     }
     
     req.user = user;
+    req.userId = user._id;
     next();
   } catch (err) {
     return res.status(401).send({ error: 'Invalid token.' });

@@ -6,9 +6,7 @@ const { pool } = require('../database/postgres');
 
 const getDevices = async (req, res) => {
     try {
-        const { userId } = req.user;
-        const user = await User.findById(userId);
-        if (!user) return res.status(404).json({ error: 'User not found' });
+        const user = req.user;
 
         const userDeviceIds = user.devices || [];
 
@@ -74,8 +72,7 @@ const syncDevice = async (req, res) => {
         const { deviceId, deviceName, activeConfigName, configData } = req.body;
         if (!deviceId) return res.status(400).json({ error: 'Missing deviceId' });
 
-        const { userId } = req.user;
-        const user = await User.findById(userId);
+        const user = req.user;
         if (!user || !user.devices.includes(deviceId)) {
             return res.status(403).json({ error: 'You do not have permission to sync this device' });
         }
@@ -100,12 +97,10 @@ const syncDevice = async (req, res) => {
 const claimDevice = async (req, res) => {
     try {
         const { deviceId } = req.body;
-        const { userId } = req.user;
 
         if (!deviceId) return res.status(400).json({ error: 'Missing deviceId' });
 
-        const user = await User.findById(userId);
-        if (!user) return res.status(404).json({ error: 'User not found' });
+        const user = req.user;
 
         if (!user.devices.includes(deviceId)) {
             user.devices.push(deviceId);
