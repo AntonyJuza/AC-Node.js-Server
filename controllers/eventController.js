@@ -1,4 +1,5 @@
 const { pool } = require('../database/postgres');
+const User = require('../models/User');
 
 const logEvent = async (req, res) => {
     try {
@@ -28,7 +29,19 @@ const logEvent = async (req, res) => {
 
 const getEvents = async (req, res) => {
     try {
-        const result = await pool.query('SELECT * FROM ac_events ORDER BY created_at DESC LIMIT 50');
+        const { userId } = req.user;
+        const user = await User.findById(userId);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        const userDeviceIds = user.devices || [];
+        if (userDeviceIds.length === 0) {
+            return res.status(200).json([]);
+        }
+
+        const result = await pool.query(
+            'SELECT * FROM ac_events WHERE device_id = ANY($1) ORDER BY created_at DESC LIMIT 50',
+            [userDeviceIds]
+        );
         return res.status(200).json(result.rows);
     } catch (err) {
         console.error('[EVENT SERVER ERROR]', err);
@@ -37,3 +50,4 @@ const getEvents = async (req, res) => {
 };
 
 module.exports = { logEvent, getEvents };
+

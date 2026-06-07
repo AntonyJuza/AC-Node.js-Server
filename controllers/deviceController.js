@@ -1,15 +1,29 @@
 const Device = require('../models/Device');
+const User = require('../models/User');
 const { sendCommandToDevice, invokeDeviceMethod } = require('../iotHubService');
 const { publishCommand } = require('../src/mqtt/publisher');
 const { pool } = require('../database/postgres');
 
 const getDevices = async (req, res) => {
     try {
-        // Fetch all devices from PostgreSQL (live states)
-        const { rows } = await pool.query('SELECT * FROM devices ORDER BY last_seen DESC');
+        const { userId } = req.user;
+        const user = await User.findById(userId);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        const userDeviceIds = user.devices || [];
+
+        if (userDeviceIds.length === 0) {
+            return res.status(200).json({ success: true, data: [] });
+        }
+
+        // Fetch user's devices from PostgreSQL (live states)
+        const { rows } = await pool.query(
+            'SELECT * FROM devices WHERE device_id = ANY($1) ORDER BY last_seen DESC',
+            [userDeviceIds]
+        );
         
-        // Fetch all devices from MongoDB (metadata / configs)
-        const mongoDevices = await Device.find({});
+        // Fetch user's devices from MongoDB (metadata / configs)
+        const mongoDevices = await Device.find({ deviceId: { $in: userDeviceIds } });
         const mongoMap = {};
         mongoDevices.forEach(d => {
             mongoMap[d.deviceId] = d;
@@ -30,7 +44,7 @@ const getDevices = async (req, res) => {
             };
         });
 
-        // Add any devices only in MongoDB but not in Postgres (rare, but good for completeness)
+        // Add any devices only in MongoDB but not in Postgres
         mongoDevices.forEach(d => {
             const alreadyExists = devices.some(x => x.deviceId === d.deviceId);
             if (!alreadyExists) {
@@ -60,6 +74,12 @@ const syncDevice = async (req, res) => {
         const { deviceId, deviceName, activeConfigName, configData } = req.body;
         if (!deviceId) return res.status(400).json({ error: 'Missing deviceId' });
 
+        const { userId } = req.user;
+        const user = await User.findById(userId);
+        if (!user || !user.devices.includes(deviceId)) {
+            return res.status(403).json({ error: 'You do not have permission to sync this device' });
+        }
+
         const updatePayload = {};
         if (deviceName) updatePayload.deviceName = deviceName;
         if (activeConfigName !== undefined) updatePayload.activeConfigName = activeConfigName;
@@ -73,6 +93,35 @@ const syncDevice = async (req, res) => {
         return res.status(200).json({ message: 'Device synced', device });
     } catch (err) {
         console.error('[DEVICE SERVER ERROR]', err);
+        return res.status(500).json({ error: 'Internal Server Error' });
+    }
+};
+
+const claimDevice = async (req, res) => {
+    try {
+        const { deviceId } = req.body;
+        const { userId } = req.user;
+
+        if (!deviceId) return res.status(400).json({ error: 'Missing deviceId' });
+
+        const user = await User.findById(userId);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        if (!user.devices.includes(deviceId)) {
+            user.devices.push(deviceId);
+            await user.save();
+        }
+
+        // Ensure device document exists in MongoDB
+        const device = await Device.findOneAndUpdate(
+            { deviceId },
+            { $setOnInsert: { deviceName: 'Smart AC Node', activeConfigName: 'NONE' } },
+            { upsert: true, new: true }
+        );
+
+        return res.status(200).json({ success: true, message: 'Device claimed successfully', devices: user.devices, device });
+    } catch (err) {
+        console.error('[CLAIM DEVICE ERROR]', err);
         return res.status(500).json({ error: 'Internal Server Error' });
     }
 };
@@ -136,5 +185,6 @@ const powerOn = async (req, res) => {
     }
 };
 
-module.exports = { getDevices, syncDevice, getDevice, sendCommand, invokeMethod, powerOn };
+module.exports = { getDevices, syncDevice, getDevice, sendCommand, invokeMethod, powerOn, claimDevice };
+
 

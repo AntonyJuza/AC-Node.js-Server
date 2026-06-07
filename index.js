@@ -9,6 +9,7 @@ const { initPostgresDB } = require('./database/postgres');
 
 const deviceRoutes = require('./routes/deviceRoutes');
 const eventRoutes = require('./routes/eventRoutes');
+const authRoutes = require('./routes/authRoutes');
 const appEmitter = require('./src/events/eventEmitter');
 
 const app = express();
@@ -29,6 +30,7 @@ app.use(morgan('dev'));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Routing
+app.use('/api/auth', authRoutes);
 app.use('/api/devices', deviceRoutes);
 app.use('/api/events', eventRoutes);
 
