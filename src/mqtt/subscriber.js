@@ -12,9 +12,19 @@ mqttClient.on("connect", () => {
 });
 
 mqttClient.on("message", async (topic, message) => {
-    try {
-        const payload = JSON.parse(message.toString());
+    console.log("RAW TOPIC:", topic);
+    console.log("RAW MESSAGE:", message.toString());
 
+    let payload;
+
+    try {
+        payload = JSON.parse(message.toString());
+    } catch (e) {
+        console.error("JSON parse failed:", e);
+        return;
+    }
+
+    try {
         console.log(`[MQTT] ${topic}`);
         console.log(payload);
 
