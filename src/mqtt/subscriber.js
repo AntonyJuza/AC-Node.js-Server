@@ -35,20 +35,32 @@ mqttClient.on("message", async (topic, message) => {
         const eventType = parts[2];
 
         if (eventType === "heartbeat") {
+            const { power, presence, uptime } = payload;
             await pool.query(`
                 INSERT INTO devices (
                     device_id,
                     online,
+                    power_state,
+                    presence,
+                    uptime,
                     last_seen
                 )
-                VALUES ($1, TRUE, NOW())
+                VALUES ($1, TRUE, $2, $3, $4, NOW())
                 ON CONFLICT (device_id)
                 DO UPDATE SET
                     online = TRUE,
+                    power_state = EXCLUDED.power_state,
+                    presence = EXCLUDED.presence,
+                    uptime = EXCLUDED.uptime,
                     last_seen = NOW()
-            `, [deviceId]);
+            `, [
+                deviceId,
+                power !== undefined ? power : false,
+                presence !== undefined ? presence : false,
+                uptime !== undefined ? uptime : 0
+            ]);
 
-            console.log(`[DB] Heartbeat updated: ${deviceId}`);
+            console.log(`[DB] Heartbeat updated: ${deviceId} (Power=${power}, Presence=${presence}, Uptime=${uptime})`);
             appEmitter.emit('device_update');
         }
 
@@ -116,3 +128,20 @@ mqttClient.on("message", async (topic, message) => {
         console.error("[MQTT ERROR]", err);
     }
 });
+
+// Periodic offline check: marks devices as offline if not seen for >90 seconds
+setInterval(async () => {
+    try {
+        const { rowCount } = await pool.query(`
+            UPDATE devices 
+            SET online = FALSE 
+            WHERE last_seen < NOW() - INTERVAL '90 seconds' AND online = TRUE
+        `);
+        if (rowCount > 0) {
+            console.log(`[MQTT] Marked ${rowCount} inactive device(s) as offline`);
+            appEmitter.emit('device_update');
+        }
+    } catch (err) {
+        console.error("[OFFLINE CHECK ERROR]", err);
+    }
+}, 30000);

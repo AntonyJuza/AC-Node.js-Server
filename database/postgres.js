@@ -15,10 +15,17 @@ const initPostgresDB = async () => {
                 device_id VARCHAR(255) PRIMARY KEY,
                 online BOOLEAN DEFAULT FALSE,
                 power_state BOOLEAN DEFAULT FALSE,
+                presence BOOLEAN DEFAULT FALSE,
+                uptime INTEGER DEFAULT 0,
                 last_seen TIMESTAMPTZ,
                 firmware_version VARCHAR(50),
                 created_at TIMESTAMPTZ DEFAULT NOW()
             );
+        `);
+        // Migration to add columns to existing tables if they do not exist
+        await pool.query(`
+            ALTER TABLE devices ADD COLUMN IF NOT EXISTS presence BOOLEAN DEFAULT FALSE;
+            ALTER TABLE devices ADD COLUMN IF NOT EXISTS uptime INTEGER DEFAULT 0;
         `);
         console.log('[POSTGRES] Connected and initialized tables successfully.');
     } catch (err) {
