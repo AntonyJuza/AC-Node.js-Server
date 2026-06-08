@@ -1,9 +1,10 @@
 const mqttClient = require("./mqttClient");
 
-function publishCommand(deviceId, action) {
+function publishCommand(deviceId, action, extraPayload = {}) {
     const payload = {
         action,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        ...extraPayload
     };
 
     mqttClient.publish(

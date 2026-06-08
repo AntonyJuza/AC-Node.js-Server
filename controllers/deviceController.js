@@ -87,6 +87,24 @@ const syncDevice = async (req, res) => {
             { $set: updatePayload },
             { new: true, upsert: true }
         );
+
+        if (configData) {
+            publishCommand(deviceId, 'set_config', {
+                cfgName: activeConfigName || device.activeConfigName || 'NONE',
+                irFreq: configData.irFreq,
+                hdrMark: configData.hdrMark,
+                hdrSpace: configData.hdrSpace,
+                bitMark: configData.bitMark,
+                oneSpace: configData.oneSpace,
+                zeroSpace: configData.zeroSpace,
+                stopMark: configData.stopMark,
+                bitLen: configData.bitLen,
+                sendRep: configData.sendRep,
+                acOn: configData.acOn,
+                acOff: configData.acOff
+            });
+        }
+
         return res.status(200).json({ message: 'Device synced', device });
     } catch (err) {
         console.error('[DEVICE SERVER ERROR]', err);
