@@ -194,6 +194,92 @@ const powerOff = async (req, res) => {
     }
 };
 
-module.exports = { getDevices, syncDevice, getDevice, sendCommand, invokeMethod, powerOn, powerOff, claimDevice };
+const startLearn = async (req, res) => {
+    try {
+        const { deviceId } = req.params;
+        publishCommand(deviceId, 'learn_start');
+        return res.status(200).json({ success: true, deviceId });
+    } catch (err) {
+        console.error('[DEVICE SERVER ERROR]', err);
+        return res.status(500).json({ error: 'Failed to start learning' });
+    }
+};
+
+const stopLearn = async (req, res) => {
+    try {
+        const { deviceId } = req.params;
+        publishCommand(deviceId, 'learn_stop');
+        return res.status(200).json({ success: true, deviceId });
+    } catch (err) {
+        console.error('[DEVICE SERVER ERROR]', err);
+        return res.status(500).json({ error: 'Failed to stop learning' });
+    }
+};
+
+const getCapturedIr = async (req, res) => {
+    try {
+        const { deviceId } = req.params;
+        global.capturedIr = global.capturedIr || {};
+        const data = global.capturedIr[deviceId];
+        if (data) {
+            delete global.capturedIr[deviceId];
+            return res.status(200).json({ success: true, captured: true, data });
+        }
+        return res.status(200).json({ success: true, captured: false });
+    } catch (err) {
+        console.error('[DEVICE SERVER ERROR]', err);
+        return res.status(500).json({ error: 'Failed to get captured IR data' });
+    }
+};
+
+const setTiming = async (req, res) => {
+    try {
+        const { deviceId } = req.params;
+        const { onTime, offTime } = req.body;
+        if (onTime === undefined || offTime === undefined) {
+            return res.status(400).json({ error: 'Missing onTime or offTime in body' });
+        }
+        const payload = { action: 'set_timing', onTime, offTime };
+        const mqttClient = require('../src/mqtt/mqttClient');
+        mqttClient.publish(`ac/${deviceId}/cmd`, JSON.stringify(payload));
+        return res.status(200).json({ success: true, deviceId });
+    } catch (err) {
+        console.error('[DEVICE SERVER ERROR]', err);
+        return res.status(500).json({ error: 'Failed to set timing config' });
+    }
+};
+
+const setTimeConfig = async (req, res) => {
+    try {
+        const { deviceId } = req.params;
+        const { gmtOffset, dstOffset } = req.body;
+        if (gmtOffset === undefined || dstOffset === undefined) {
+            return res.status(400).json({ error: 'Missing gmtOffset or dstOffset in body' });
+        }
+        const payload = { action: 'set_time_config', gmtOffset, dstOffset };
+        const mqttClient = require('../src/mqtt/mqttClient');
+        mqttClient.publish(`ac/${deviceId}/cmd`, JSON.stringify(payload));
+        return res.status(200).json({ success: true, deviceId });
+    } catch (err) {
+        console.error('[DEVICE SERVER ERROR]', err);
+        return res.status(500).json({ error: 'Failed to set timezone config' });
+    }
+};
+
+module.exports = { 
+    getDevices, 
+    syncDevice, 
+    getDevice, 
+    sendCommand, 
+    invokeMethod, 
+    powerOn, 
+    powerOff, 
+    claimDevice,
+    startLearn,
+    stopLearn,
+    getCapturedIr,
+    setTiming,
+    setTimeConfig
+};
 
 

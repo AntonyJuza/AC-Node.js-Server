@@ -10,6 +10,7 @@ mqttClient.on("connect", () => {
     mqttClient.subscribe("ac/+/heartbeat");
     mqttClient.subscribe("ac/+/event");
     mqttClient.subscribe("ac/+/sync");
+    mqttClient.subscribe("ac/+/ir_data");
 
     console.log("[MQTT] Subscribed to topics");
 });
@@ -95,6 +96,12 @@ mqttClient.on("message", async (topic, message) => {
 
             console.log(`[DB] Device sync updated: ${deviceId}`);
             appEmitter.emit('device_update');
+        }
+
+        if (eventType === "ir_data") {
+            console.log(`[MQTT IR DATA] Received learned IR from ${deviceId}`);
+            global.capturedIr = global.capturedIr || {};
+            global.capturedIr[deviceId] = payload;
         }
 
     } catch (err) {
