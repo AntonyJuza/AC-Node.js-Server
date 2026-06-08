@@ -22,6 +22,17 @@ const initPostgresDB = async () => {
                 created_at TIMESTAMPTZ DEFAULT NOW()
             );
         `);
+        // Initialize ac_events table
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS ac_events (
+                id SERIAL PRIMARY KEY,
+                device_id VARCHAR(255) NOT NULL,
+                event VARCHAR(255) NOT NULL,
+                temperature NUMERIC,
+                presence BOOLEAN,
+                created_at TIMESTAMPTZ DEFAULT NOW()
+            );
+        `);
         // Migration to add columns to existing tables if they do not exist
         await pool.query(`
             ALTER TABLE devices ADD COLUMN IF NOT EXISTS presence BOOLEAN DEFAULT FALSE;

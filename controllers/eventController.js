@@ -33,14 +33,14 @@ const getEvents = async (req, res) => {
 
         const userDeviceIds = user.devices || [];
         if (userDeviceIds.length === 0) {
-            return res.status(200).json([]);
+            return res.status(200).json({ success: true, data: [] });
         }
 
         const result = await pool.query(
-            'SELECT * FROM ac_events WHERE device_id = ANY($1) ORDER BY created_at DESC LIMIT 50',
+            'SELECT id, device_id, event AS event_type, temperature, presence, created_at FROM ac_events WHERE device_id = ANY($1) ORDER BY created_at DESC LIMIT 50',
             [userDeviceIds]
         );
-        return res.status(200).json(result.rows);
+        return res.status(200).json({ success: true, data: result.rows });
     } catch (err) {
         console.error('[EVENT SERVER ERROR]', err);
         return res.status(500).json({ error: 'Internal Server Error' });
