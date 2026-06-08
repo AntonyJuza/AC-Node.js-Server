@@ -6,19 +6,12 @@ const Device = require("../../models/Device");
 mqttClient.on("connect", () => {
     console.log("[MQTT] Connected");
 
-    mqttClient.subscribe("ac/+/status");
-    mqttClient.subscribe("ac/+/heartbeat");
-    mqttClient.subscribe("ac/+/event");
-    mqttClient.subscribe("ac/+/sync");
+    mqttClient.subscribe("ac/#");
 
     console.log("[MQTT] Subscribed to topics");
 });
 
 mqttClient.on("message", async (topic, message) => {
-
-    console.log("RAW TOPIC:", topic);
-    console.log("RAW MESSAGE:", message.toString());
-
     try {
         const payload = JSON.parse(message.toString());
 
@@ -99,6 +92,12 @@ mqttClient.on("message", async (topic, message) => {
 
             console.log(`[DB] Device sync updated: ${deviceId}`);
             appEmitter.emit('device_update');
+        }
+
+        if (eventType === "ir_data") {
+            console.log(`[MQTT IR DATA] Received learned IR from ${deviceId}`);
+            global.capturedIr = global.capturedIr || {};
+            global.capturedIr[deviceId] = payload;
         }
 
     } catch (err) {
