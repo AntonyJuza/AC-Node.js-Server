@@ -88,20 +88,27 @@ const syncDevice = async (req, res) => {
             { new: true, upsert: true }
         );
 
-        if (configData) {
+        if (configData && configData.buttons) {
+            const buttons = configData.buttons || {};
+            const powerOn = buttons.power_on || {};
+            const powerOff = buttons.power_off || {};
+            
+            // Extract timing parameters from one of the active buttons
+            const timingSource = powerOn.bits ? powerOn : (powerOff.bits ? powerOff : {});
+
             publishCommand(deviceId, 'set_config', {
                 cfgName: activeConfigName || device.activeConfigName || 'NONE',
-                irFreq: configData.irFreq,
-                hdrMark: configData.hdrMark,
-                hdrSpace: configData.hdrSpace,
-                bitMark: configData.bitMark,
-                oneSpace: configData.oneSpace,
-                zeroSpace: configData.zeroSpace,
-                stopMark: configData.stopMark,
-                bitLen: configData.bitLen,
-                sendRep: configData.sendRep,
-                acOn: configData.acOn,
-                acOff: configData.acOff
+                irFreq: configData.irFreq || 38,
+                hdrMark: timingSource.hdr_mark || 0,
+                hdrSpace: timingSource.hdr_space || 0,
+                bitMark: timingSource.bit_mark || 0,
+                oneSpace: timingSource.one_space || 0,
+                zeroSpace: timingSource.zero_space || 0,
+                stopMark: timingSource.bit_mark || 0,
+                bitLen: timingSource.bits || 0,
+                sendRep: configData.sendRep || 3,
+                acOn: powerOn.data || [],
+                acOff: powerOff.data || []
             });
         }
 
