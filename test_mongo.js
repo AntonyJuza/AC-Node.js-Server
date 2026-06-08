@@ -1,6 +1,6 @@
-require('dotenv').config({ path: 'c:/Users/Juza/AC-Node.js-Server/.env' });
+require('dotenv').config();
 const mongoose = require('mongoose');
-const Device = require('c:/Users/Juza/AC-Node.js-Server/models/Device');
+const Device = require('./models/Device');
 
 async function test() {
     const uri = process.env.MONGO_URI;
