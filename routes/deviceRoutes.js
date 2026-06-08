@@ -14,6 +14,7 @@ router.get('/:deviceId', verifyDeviceOwnership, deviceController.getDevice);
 router.post('/:deviceId/command', verifyDeviceOwnership, deviceController.sendCommand);
 router.post('/:deviceId/method', verifyDeviceOwnership, deviceController.invokeMethod);
 router.post('/:deviceId/power-on', verifyDeviceOwnership, deviceController.powerOn);
+router.post('/:deviceId/power-off', verifyDeviceOwnership, deviceController.powerOff);
 
 module.exports = router;
 

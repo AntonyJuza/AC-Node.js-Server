@@ -180,6 +180,20 @@ const powerOn = async (req, res) => {
     }
 };
 
-module.exports = { getDevices, syncDevice, getDevice, sendCommand, invokeMethod, powerOn, claimDevice };
+const powerOff = async (req, res) => {
+    try {
+        const { deviceId } = req.params;
+        publishCommand(deviceId, 'power_off');
+        return res.status(200).json({
+            success: true,
+            deviceId
+        });
+    } catch (err) {
+        console.error('[DEVICE SERVER ERROR]', err);
+        return res.status(500).json({ error: 'Failed to power off device' });
+    }
+};
+
+module.exports = { getDevices, syncDevice, getDevice, sendCommand, invokeMethod, powerOn, powerOff, claimDevice };
 
 
