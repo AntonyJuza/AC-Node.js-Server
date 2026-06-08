@@ -12,6 +12,8 @@ mqttClient.on("connect", () => {
 });
 
 mqttClient.on("message", async (topic, message) => {
+    console.log("TOPIC =", topic);
+    console.log("LEN =", message.length);
     console.log("RAW TOPIC:", topic);
     console.log("RAW MESSAGE:", message.toString());
 
