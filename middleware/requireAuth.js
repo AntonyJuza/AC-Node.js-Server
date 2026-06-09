@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const { pool } = require('../database/postgres');
 
 module.exports = async (req, res, next) => {
   let token = null;
@@ -27,13 +27,19 @@ module.exports = async (req, res, next) => {
     const payload = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
     const { userId } = payload;
 
-    const user = await User.findById(userId);
+    // Lookup user in PostgreSQL
+    const result = await pool.query(
+      'SELECT id, username, email, role, devices FROM users WHERE id = $1',
+      [userId]
+    );
+
+    const user = result.rows[0];
     if (!user) {
       return res.status(401).send({ error: 'User not found.' });
     }
     
     req.user = user;
-    req.userId = user._id;
+    req.userId = user.id;
     next();
   } catch (err) {
     return res.status(401).send({ error: 'Invalid or expired token.' });

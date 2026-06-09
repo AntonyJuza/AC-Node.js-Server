@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const bcrypt = require('bcryptjs');
+const { pool } = require('../database/postgres');
 
 const generateToken = (userId) => {
   return jwt.sign({ userId }, process.env.JWT_SECRET || 'fallback_secret', {
@@ -24,30 +25,37 @@ exports.register = async (req, res) => {
       return res.status(400).send({ error: 'Username, email, and password are required.' });
     }
 
-    const existingEmail = await User.findOne({ email: email.toLowerCase() });
-    if (existingEmail) {
+    const emailCheck = await pool.query('SELECT 1 FROM users WHERE email = $1', [email.toLowerCase()]);
+    if (emailCheck.rows.length > 0) {
       return res.status(422).send({ error: 'Email is in use.' });
     }
 
-    const existingUsername = await User.findOne({ username });
-    if (existingUsername) {
+    const usernameCheck = await pool.query('SELECT 1 FROM users WHERE username = $1', [username]);
+    if (usernameCheck.rows.length > 0) {
       return res.status(422).send({ error: 'Username is in use.' });
     }
 
     // First user is automatically admin
-    const userCount = await User.countDocuments();
+    const countResult = await pool.query('SELECT COUNT(*) FROM users');
+    const userCount = parseInt(countResult.rows[0].count, 10);
     const role = userCount === 0 ? 'admin' : 'user';
 
-    const user = new User({ username, email, passwordHash: password, role });
-    await user.save();
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(password, salt);
 
-    const token = generateToken(user._id);
+    const insertResult = await pool.query(
+      'INSERT INTO users (username, email, password_hash, role) VALUES ($1, $2, $3, $4) RETURNING id, username, email, role, devices',
+      [username, email.toLowerCase(), passwordHash, role]
+    );
+    const user = insertResult.rows[0];
+
+    const token = generateToken(user.id);
     setCookie(res, token);
 
     res.status(201).send({
       success: true,
       token,
-      user: { id: user._id, username: user.username, email: user.email, role: user.role }
+      user: { id: user.id, username: user.username, email: user.email, role: user.role }
     });
   } catch (err) {
     console.error("REGISTER ERROR:", err);
@@ -67,29 +75,28 @@ exports.login = async (req, res) => {
     }
 
     // Find user by email OR username
-    const user = await User.findOne({
-      $or: [
-        { email: loginIdentifier.toLowerCase() },
-        { username: loginIdentifier }
-      ]
-    });
+    const result = await pool.query(
+      'SELECT id, username, email, password_hash, role FROM users WHERE email = $1 OR username = $1',
+      [loginIdentifier.toLowerCase()]
+    );
 
+    const user = result.rows[0];
     if (!user) {
       return res.status(401).send({ error: 'Invalid username/email or password.' });
     }
 
-    const isMatch = await user.comparePassword(password);
+    const isMatch = await bcrypt.compare(password, user.password_hash);
     if (!isMatch) {
       return res.status(401).send({ error: 'Invalid username/email or password.' });
     }
 
-    const token = generateToken(user._id);
+    const token = generateToken(user.id);
     setCookie(res, token);
 
     res.send({
       success: true,
       token,
-      user: { id: user._id, username: user.username, email: user.email, role: user.role }
+      user: { id: user.id, username: user.username, email: user.email, role: user.role }
     });
   } catch (err) {
     return res.status(500).send({ error: err.message });
@@ -113,7 +120,7 @@ exports.me = async (req, res) => {
     res.send({
       success: true,
       user: {
-        id: req.user._id,
+        id: req.user.id,
         username: req.user.username,
         email: req.user.email,
         role: req.user.role,
@@ -127,7 +134,8 @@ exports.me = async (req, res) => {
 
 exports.setupStatus = async (req, res) => {
   try {
-    const userCount = await User.countDocuments();
+    const countResult = await pool.query('SELECT COUNT(*) FROM users');
+    const userCount = parseInt(countResult.rows[0].count, 10);
     res.send({ success: true, setupRequired: userCount === 0 });
   } catch (err) {
     res.status(500).send({ error: err.message });

@@ -33,6 +33,18 @@ const initPostgresDB = async () => {
                 created_at TIMESTAMPTZ DEFAULT NOW()
             );
         `);
+        // Initialize users table
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                username VARCHAR(255) UNIQUE NOT NULL,
+                email VARCHAR(255) UNIQUE NOT NULL,
+                password_hash VARCHAR(255) NOT NULL,
+                role VARCHAR(50) DEFAULT 'user',
+                devices VARCHAR(255)[] DEFAULT '{}',
+                created_at TIMESTAMPTZ DEFAULT NOW()
+            );
+        `);
         // Migration to add columns to existing tables if they do not exist
         await pool.query(`
             ALTER TABLE devices ADD COLUMN IF NOT EXISTS presence BOOLEAN DEFAULT FALSE;

@@ -1,5 +1,4 @@
 const { pool } = require('../database/postgres');
-const User = require('../models/User');
 
 const logEvent = async (req, res) => {
     try {

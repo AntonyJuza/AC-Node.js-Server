@@ -1,5 +1,4 @@
 const Device = require('../models/Device');
-const User = require('../models/User');
 const { sendCommandToDevice, invokeDeviceMethod } = require('../iotHubService');
 const { publishCommand } = require('../src/mqtt/publisher');
 const { pool } = require('../database/postgres');
@@ -133,7 +132,10 @@ const claimDevice = async (req, res) => {
 
         if (!user.devices.includes(deviceId)) {
             user.devices.push(deviceId);
-            await user.save();
+            await pool.query(
+                'UPDATE users SET devices = array_append(devices, $1) WHERE id = $2',
+                [deviceId, user.id]
+            );
         }
 
         // Ensure device document exists in MongoDB
