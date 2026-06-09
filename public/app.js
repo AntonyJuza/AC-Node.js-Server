@@ -329,14 +329,20 @@ async function sendQuickCommand(cmd) {
   showToast(`Sending ${targetCmd} to ${currentPanelDeviceId}...`, 'warning');
   
   try {
-    // Determine whether to call power-on endpoint or default command endpoint
-    const url = targetCmd === 'power_on' 
-      ? `/api/devices/${currentPanelDeviceId}/power-on` 
-      : `/api/devices/${currentPanelDeviceId}/command`;
-      
-    const payload = targetCmd === 'power_on' 
-      ? {} 
-      : { command: targetCmd };
+    // Determine whether to call specific endpoint or default command endpoint
+    let url;
+    let payload = {};
+
+    if (targetCmd === 'power_on') {
+        url = `/api/devices/${currentPanelDeviceId}/power-on`;
+    } else if (targetCmd === 'power_off') {
+        url = `/api/devices/${currentPanelDeviceId}/power-off`;
+    } else if (targetCmd === 'LEARN') {
+        url = `/api/devices/${currentPanelDeviceId}/learn-start`;
+    } else {
+        url = `/api/devices/${currentPanelDeviceId}/command`;
+        payload = { command: targetCmd };
+    }
 
     const res = await fetch(`${API_BASE}${url}`, {
       method: 'POST',
