@@ -36,7 +36,7 @@ app.use('/api/events', eventRoutes);
 
 // Health check root endpoint (keep JSON for API clients, UI is served via static)
 app.get('/status', (req, res) => {
-    res.json({ status: 'active', message: 'AC Automation Node.js Backend is running (Hybrid Architecture)' });
+    res.json({ status: 'active', message: 'AVIO Node.js Backend is running (Hybrid Architecture)' });
 });
 
 // SSE endpoint for live UI updates
