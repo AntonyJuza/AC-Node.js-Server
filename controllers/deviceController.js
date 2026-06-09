@@ -7,20 +7,25 @@ const getDevices = async (req, res) => {
     try {
         const user = req.user;
 
-        const userDeviceIds = user.devices || [];
+        let query = 'SELECT * FROM devices ORDER BY last_seen DESC';
+        let params = [];
 
-        if (userDeviceIds.length === 0) {
-            return res.status(200).json({ success: true, data: [] });
+        if (user.role !== 'admin') {
+            const userDeviceIds = user.devices || [];
+            if (userDeviceIds.length === 0) {
+                return res.status(200).json({ success: true, data: [] });
+            }
+            query = 'SELECT * FROM devices WHERE device_id = ANY($1) ORDER BY last_seen DESC';
+            params = [userDeviceIds];
         }
 
         // Fetch user's devices from PostgreSQL (live states)
-        const { rows } = await pool.query(
-            'SELECT * FROM devices WHERE device_id = ANY($1) ORDER BY last_seen DESC',
-            [userDeviceIds]
-        );
+        const { rows } = await pool.query(query, params);
         
+        const deviceIds = rows.map(r => r.device_id);
+
         // Fetch user's devices from MongoDB (metadata / configs)
-        const mongoDevices = await Device.find({ deviceId: { $in: userDeviceIds } });
+        const mongoDevices = await Device.find({ deviceId: { $in: deviceIds } });
         const mongoMap = {};
         mongoDevices.forEach(d => {
             mongoMap[d.deviceId] = d;

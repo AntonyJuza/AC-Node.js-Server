@@ -6,6 +6,11 @@ module.exports = async (req, res, next) => {
     return res.status(401).send({ error: 'You must be logged in.' });
   }
 
+  // Administrators bypass device ownership checks entirely
+  if (user.role === 'admin') {
+    return next();
+  }
+
   if (!deviceId) {
     return res.status(400).send({ error: 'Device ID is required.' });
   }
