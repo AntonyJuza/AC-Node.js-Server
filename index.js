@@ -16,6 +16,7 @@ const authRoutes = require('./routes/authRoutes');
 const appEmitter = require('./src/events/eventEmitter');
 
 const app = express();
+app.set('trust proxy', 1);
 const port = process.env.PORT || 3000;
 
 // Connect to MongoDB (for devices, configs)
