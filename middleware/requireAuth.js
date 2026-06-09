@@ -1,53 +1,30 @@
 const jwt = require('jsonwebtoken');
-const mongoose = require('mongoose');
 const User = require('../models/User');
-const { pool } = require('../database/postgres');
 
 module.exports = async (req, res, next) => {
-  const { authorization } = req.headers;
+  let token = null;
 
-  if (!authorization) {
-    try {
-      // Find or create default developer user for local UI access
-      let user = await User.findOne({ email: 'dev@example.com' });
-      if (!user) {
-        user = await User.findOne(); // fallback to any existing user
-      }
-      if (!user) {
-        user = new User({
-          name: 'Default Developer',
-          email: 'dev@example.com',
-          password: 'password123',
-          devices: []
-        });
-        await user.save();
-      }
+  // 1. Read token from HttpOnly cookies (for dashboard browser UI)
+  if (req.cookies && req.cookies.token) {
+    token = req.cookies.token;
+  }
 
-      // Automatically claim any device found in Postgres database
-      const { rows } = await pool.query('SELECT device_id FROM devices');
-      let updated = false;
-      rows.forEach(row => {
-        if (!user.devices.includes(row.device_id)) {
-          user.devices.push(row.device_id);
-          updated = true;
-        }
-      });
-      if (updated) {
-        await user.save();
-      }
-
-      req.user = user;
-      req.userId = user._id;
-      return next();
-    } catch (err) {
-      console.error('[AUTH BYPASS ERROR]', err);
-      return res.status(401).send({ error: 'You must be logged in.' });
+  // 2. Read token from Authorization header (for mobile app API calls)
+  if (!token && req.headers.authorization) {
+    const authHeader = req.headers.authorization;
+    if (authHeader.startsWith('Bearer ')) {
+      token = authHeader.substring(7);
+    } else {
+      token = authHeader;
     }
   }
 
-  const token = authorization.replace('Bearer ', '');
+  if (!token) {
+    return res.status(401).send({ error: 'You must be logged in.' });
+  }
+
   try {
-    const payload = jwt.verify(token, process.env.JWT_SECRET);
+    const payload = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
     const { userId } = payload;
 
     const user = await User.findById(userId);
@@ -59,6 +36,6 @@ module.exports = async (req, res, next) => {
     req.userId = user._id;
     next();
   } catch (err) {
-    return res.status(401).send({ error: 'Invalid token.' });
+    return res.status(401).send({ error: 'Invalid or expired token.' });
   }
 };

@@ -4,6 +4,9 @@ const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
+const cookieParser = require('cookie-parser');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const connectDB = require('./mongoClient');
 const { initPostgresDB } = require('./database/postgres');
 
@@ -21,10 +24,39 @@ connectDB();
 // Initialize PostgreSQL (for events, analytics)
 initPostgresDB();
 
-// Middleware
-app.use(cors());
+// Security and utility middleware
+app.use(helmet({
+    contentSecurityPolicy: false // Disable CSP to avoid breaking inline scripts/styles/CDNs in dashboard
+}));
+app.use(cookieParser());
+app.use(cors({
+    origin: true, // Allow dynamically reflecting the origin
+    credentials: true // Allow cookies
+}));
 app.use(express.json());
 app.use(morgan('dev'));
+
+// Rate limiting setup
+const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 mins
+    max: 150, // Limit each IP to 150 requests per window
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Too many requests, please try again later.' }
+});
+
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 mins
+    max: 20, // Limit login/register to 20 attempts per window
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Too many login attempts, please try again after 15 minutes.' }
+});
+
+// Apply rate limiting
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
+app.use('/api', apiLimiter);
 
 // Serve Web UI static files
 app.use(express.static(path.join(__dirname, 'public')));

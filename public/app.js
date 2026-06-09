@@ -68,6 +68,11 @@ async function fetchApi(endpoint, options = {}) {
       headers: { 'Content-Type': 'application/json' },
       ...options
     });
+    if (res.status === 401) {
+      currentUser = null;
+      checkAuth();
+      return null;
+    }
     if (!res.ok) throw new Error(`API Error: ${res.status}`);
     return await res.json();
   } catch (error) {
@@ -609,17 +614,180 @@ async function invokeMethod() {
   } catch(e) { showToast('Network connection error', 'error'); }
 }
 
-// ================= INIT =================
-window.addEventListener('DOMContentLoaded', () => {
+// ================= AUTHENTICATION ACTIONS =================
+let currentUser = null;
+
+async function checkAuth() {
+  const overlay = document.getElementById('authOverlay');
+  const errorBox = document.getElementById('authError');
+  errorBox.style.display = 'none';
+
+  try {
+    // 1. Check setup-status (is setup required?)
+    const setupRes = await fetch('/api/auth/setup-status');
+    const setupData = await setupRes.json();
+    
+    if (setupData && setupData.setupRequired) {
+      // Show setup form, hide login form
+      document.getElementById('loginForm').style.display = 'none';
+      document.getElementById('setupForm').style.display = 'block';
+      document.getElementById('authTitle').innerText = 'AVIO Admin Setup';
+      document.getElementById('authSubtitle').innerText = 'Create the initial administrator account.';
+      overlay.style.visibility = 'visible';
+      overlay.style.opacity = '1';
+      return;
+    }
+
+    // 2. Check if logged in
+    const meRes = await fetch('/api/auth/me');
+    const meData = await meRes.json();
+
+    if (meRes.ok && meData && meData.success) {
+      currentUser = meData.user;
+      overlay.style.opacity = '0';
+      setTimeout(() => {
+        overlay.style.visibility = 'hidden';
+      }, 400);
+
+      // Update UI header profile
+      document.getElementById('usernameDisplay').innerText = currentUser.username;
+      const initial = currentUser.username.charAt(0).toUpperCase();
+      document.getElementById('userAvatar').innerText = initial;
+
+      // Start SSE and dashboard if not already started
+      initializeDashboardOnce();
+    } else {
+      // Show login form, hide setup form
+      document.getElementById('setupForm').style.display = 'none';
+      document.getElementById('loginForm').style.display = 'block';
+      document.getElementById('authTitle').innerText = 'AVIO Admin';
+      document.getElementById('authSubtitle').innerText = 'Please sign in to access the system metrics.';
+      overlay.style.visibility = 'visible';
+      overlay.style.opacity = '1';
+    }
+  } catch (err) {
+    console.error('[AUTH CHECK FAILED]', err);
+    showToast('Failed to connect to authentication server.', 'error');
+  }
+}
+
+let dashboardInitialized = false;
+function initializeDashboardOnce() {
+  if (dashboardInitialized) {
+    loadDashboard(); // Refresh
+    return;
+  }
+  dashboardInitialized = true;
   loadDashboard();
   checkHealth();
-  
+
   // SSE for live UI updates
   const sse = new EventSource('/api/stream');
   sse.onmessage = () => {
-    loadDashboard();
+    if (currentUser) loadDashboard();
   };
-  
+
   // Health check polling
-  setInterval(checkHealth, 30000);
+  setInterval(() => {
+    if (currentUser) checkHealth();
+  }, 30000);
+}
+
+async function handleLoginSubmit(event) {
+  event.preventDefault();
+  const errorBox = document.getElementById('authError');
+  const btn = document.getElementById('loginSubmitBtn');
+  errorBox.style.display = 'none';
+  btn.disabled = true;
+
+  const usernameOrEmail = document.getElementById('loginUsername').value;
+  const password = document.getElementById('loginPassword').value;
+
+  try {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: usernameOrEmail, password })
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      showToast('Signed in successfully.');
+      document.getElementById('loginPassword').value = '';
+      checkAuth();
+    } else {
+      errorBox.innerText = data.error || 'Authentication failed.';
+      errorBox.style.display = 'block';
+    }
+  } catch (err) {
+    errorBox.innerText = 'Network error, please try again.';
+    errorBox.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function handleSetupSubmit(event) {
+  event.preventDefault();
+  const errorBox = document.getElementById('authError');
+  const btn = document.getElementById('setupSubmitBtn');
+  errorBox.style.display = 'none';
+
+  const username = document.getElementById('setupUsername').value;
+  const email = document.getElementById('setupEmail').value;
+  const password = document.getElementById('setupPassword').value;
+  const confirmPassword = document.getElementById('setupConfirmPassword').value;
+
+  if (password !== confirmPassword) {
+    errorBox.innerText = 'Passwords do not match.';
+    errorBox.style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true;
+
+  try {
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, email, password })
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      showToast('Admin account created successfully!');
+      // Clear inputs
+      document.getElementById('setupUsername').value = '';
+      document.getElementById('setupEmail').value = '';
+      document.getElementById('setupPassword').value = '';
+      document.getElementById('setupConfirmPassword').value = '';
+      checkAuth();
+    } else {
+      errorBox.innerText = data.error || 'Setup registration failed.';
+      errorBox.style.display = 'block';
+    }
+  } catch (err) {
+    errorBox.innerText = 'Network error during registration.';
+    errorBox.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function handleLogoutClick() {
+  try {
+    const res = await fetch('/api/auth/logout', { method: 'POST' });
+    if (res.ok) {
+      currentUser = null;
+      showToast('Logged out successfully.');
+      checkAuth();
+    } else {
+      showToast('Failed to log out.', 'error');
+    }
+  } catch (err) {
+    showToast('Network error during log out.', 'error');
+  }
+}
+
+// ================= INIT =================
+window.addEventListener('DOMContentLoaded', () => {
+  checkAuth();
 });

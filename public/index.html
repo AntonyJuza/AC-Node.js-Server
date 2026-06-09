@@ -58,8 +58,9 @@
             <input type="text" placeholder="Search devices, nodes..." id="globalSearch" />
           </div>
           <div class="user-profile">
-            <div class="avatar">A</div>
-            <span>Admin</span>
+            <div class="avatar" id="userAvatar">A</div>
+            <span id="usernameDisplay">Admin</span>
+            <button class="logout-btn" id="logoutBtn" onclick="handleLogoutClick()">Logout</button>
           </div>
         </div>
       </header>
@@ -513,6 +514,77 @@
       </div>
     </div>
 
+  </div>
+
+  <!-- ================= AUTH SYSTEM OVERLAY ================= -->
+  <div class="auth-overlay" id="authOverlay">
+    <div class="auth-card glass-panel" id="authCard">
+      <!-- Header with AVIO Logo -->
+      <div class="auth-header">
+        <div class="auth-logo">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="-10 -10 48 48">
+            <rect x="-3" y="-3" width="30" height="30" rx="5" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.5" />
+            <g fill="none" stroke="#0066FF" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m10 20-1.25-2.5L6 18"/>
+              <path d="M10 4 8.75 6.5 6 6"/>
+              <path d="m14 20 1.25-2.5L18 18"/>
+              <path d="m14 4 1.25 2.5L18 6"/>
+              <path d="m17 21-3-6h-4"/>
+              <path d="m17 3-3 6 1.5 3"/>
+              <path d="M2 12h6.5L10 9"/>
+              <path d="m20 10-1.5 2 1.5 2"/>
+              <path d="M22 12h-6.5L14 15"/>
+              <path d="m4 10 1.5 2L4 14"/>
+              <path d="m7 21 3-6-1.5-3"/>
+              <path d="m7 3 3 6h4"/>
+            </g>
+          </svg>
+        </div>
+        <h1 id="authTitle">AVIO Admin</h1>
+        <p id="authSubtitle">Please sign in to access the system metrics.</p>
+      </div>
+
+      <!-- Auth Error Banner -->
+      <div class="auth-error" id="authError" style="display: none;"></div>
+
+      <!-- Login Form -->
+      <form id="loginForm" onsubmit="handleLoginSubmit(event)">
+        <div class="input-group">
+          <label for="loginUsername">Username or Email</label>
+          <input type="text" id="loginUsername" placeholder="Enter username or email" required />
+        </div>
+        <div class="input-group">
+          <label for="loginPassword">Password</label>
+          <input type="password" id="loginPassword" placeholder="••••••••" required />
+        </div>
+        <button type="submit" class="btn btn-primary btn-auth" id="loginSubmitBtn">
+          <span>Sign In</span>
+        </button>
+      </form>
+
+      <!-- Setup Form (Hidden by default) -->
+      <form id="setupForm" onsubmit="handleSetupSubmit(event)" style="display: none;">
+        <div class="input-group">
+          <label for="setupUsername">Username</label>
+          <input type="text" id="setupUsername" placeholder="e.g. admin" required />
+        </div>
+        <div class="input-group">
+          <label for="setupEmail">Email Address</label>
+          <input type="email" id="setupEmail" placeholder="admin@example.com" required />
+        </div>
+        <div class="input-group">
+          <label for="setupPassword">Password</label>
+          <input type="password" id="setupPassword" placeholder="••••••••" required />
+        </div>
+        <div class="input-group">
+          <label for="setupConfirmPassword">Confirm Password</label>
+          <input type="password" id="setupConfirmPassword" placeholder="••••••••" required />
+        </div>
+        <button type="submit" class="btn btn-success btn-auth" id="setupSubmitBtn">
+          <span>Set Up Admin Account</span>
+        </button>
+      </form>
+    </div>
   </div>
 
   <div id="toast-container"></div>
