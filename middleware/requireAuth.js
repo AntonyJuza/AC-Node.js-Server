@@ -29,7 +29,7 @@ module.exports = async (req, res, next) => {
 
     // Lookup user in PostgreSQL
     const result = await pool.query(
-      'SELECT id, username, email, role, devices FROM users WHERE id = $1',
+      'SELECT id, username, email, role FROM users WHERE id = $1',
       [userId]
     );
 

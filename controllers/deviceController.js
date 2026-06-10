@@ -11,7 +11,11 @@ const getDevices = async (req, res) => {
         let params = [];
 
         if (user.role !== 'admin') {
-            const userDeviceIds = user.devices || [];
+            const ownedDevices = await pool.query(
+                'SELECT device_id FROM device_ownership WHERE user_id = $1',
+                [user.id]
+            );
+            const userDeviceIds = ownedDevices.rows.map(r => r.device_id);
             if (userDeviceIds.length === 0) {
                 return res.status(200).json({ success: true, data: [] });
             }
@@ -81,8 +85,18 @@ const syncDevice = async (req, res) => {
         if (!deviceId) return res.status(400).json({ error: 'Missing deviceId' });
 
         const user = req.user;
-        if (!user || !user.devices.includes(deviceId)) {
+        if (!user) {
             return res.status(403).json({ error: 'You do not have permission to sync this device' });
+        }
+
+        if (user.role !== 'admin') {
+            const ownershipCheck = await pool.query(
+                'SELECT 1 FROM device_ownership WHERE user_id = $1 AND device_id = $2',
+                [user.id, deviceId]
+            );
+            if (ownershipCheck.rows.length === 0) {
+                return res.status(403).json({ error: 'You do not have permission to sync this device' });
+            }
         }
 
         const updatePayload = {};
@@ -135,13 +149,12 @@ const claimDevice = async (req, res) => {
 
         const user = req.user;
 
-        if (!user.devices.includes(deviceId)) {
-            user.devices.push(deviceId);
-            await pool.query(
-                'UPDATE users SET devices = array_append(devices, $1) WHERE id = $2',
-                [deviceId, user.id]
-            );
-        }
+        await pool.query(
+            `INSERT INTO device_ownership (user_id, device_id)
+             VALUES ($1, $2)
+             ON CONFLICT DO NOTHING`,
+            [user.id, deviceId]
+        );
 
         // Ensure device document exists in MongoDB
         const device = await Device.findOneAndUpdate(
@@ -150,7 +163,17 @@ const claimDevice = async (req, res) => {
             { upsert: true, new: true }
         );
 
-        return res.status(200).json({ success: true, message: 'Device claimed successfully', devices: user.devices, device });
+        const ownedDevices = await pool.query(
+            'SELECT device_id FROM device_ownership WHERE user_id = $1',
+            [user.id]
+        );
+
+        return res.status(200).json({
+            success: true,
+            message: 'Device claimed successfully',
+            devices: ownedDevices.rows.map(r => r.device_id),
+            device
+        });
     } catch (err) {
         console.error('[CLAIM DEVICE ERROR]', err);
         return res.status(500).json({ error: 'Internal Server Error' });

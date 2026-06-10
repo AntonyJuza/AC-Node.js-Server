@@ -1,3 +1,5 @@
+const { pool } = require('../database/postgres');
+
 module.exports = async (req, res, next) => {
   const { deviceId } = req.params;
   const user = req.user;
@@ -15,9 +17,17 @@ module.exports = async (req, res, next) => {
     return res.status(400).send({ error: 'Device ID is required.' });
   }
 
-  if (!user.devices.includes(deviceId)) {
-    return res.status(403).send({ error: 'Forbidden. You do not own this device.' });
+  try {
+    const ownershipCheck = await pool.query(
+      'SELECT 1 FROM device_ownership WHERE user_id = $1 AND device_id = $2',
+      [user.id, deviceId]
+    );
+    if (ownershipCheck.rows.length === 0) {
+      return res.status(403).send({ error: 'Forbidden. You do not own this device.' });
+    }
+    next();
+  } catch (err) {
+    console.error('[VERIFY OWNERSHIP ERROR]', err);
+    return res.status(500).send({ error: 'Internal Server Error' });
   }
-
-  next();
 };

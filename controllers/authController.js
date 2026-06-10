@@ -44,7 +44,7 @@ exports.register = async (req, res) => {
     const passwordHash = await bcrypt.hash(password, salt);
 
     const insertResult = await pool.query(
-      'INSERT INTO users (username, email, password_hash, role) VALUES ($1, $2, $3, $4) RETURNING id, username, email, role, devices',
+      'INSERT INTO users (username, email, password_hash, role) VALUES ($1, $2, $3, $4) RETURNING id, username, email, role',
       [username, email.toLowerCase(), passwordHash, role]
     );
     const user = insertResult.rows[0];
@@ -117,6 +117,13 @@ exports.me = async (req, res) => {
     if (!req.user) {
       return res.status(401).send({ error: 'Not authenticated.' });
     }
+
+    const ownedDevicesResult = await pool.query(
+      'SELECT device_id FROM device_ownership WHERE user_id = $1',
+      [req.user.id]
+    );
+    const devices = ownedDevicesResult.rows.map(r => r.device_id);
+
     res.send({
       success: true,
       user: {
@@ -124,7 +131,7 @@ exports.me = async (req, res) => {
         username: req.user.username,
         email: req.user.email,
         role: req.user.role,
-        devices: req.user.devices
+        devices: devices
       }
     });
   } catch (err) {

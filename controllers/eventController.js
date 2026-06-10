@@ -34,7 +34,11 @@ const getEvents = async (req, res) => {
         let params = [];
 
         if (user.role !== 'admin') {
-            const userDeviceIds = user.devices || [];
+            const ownedDevices = await pool.query(
+                'SELECT device_id FROM device_ownership WHERE user_id = $1',
+                [user.id]
+            );
+            const userDeviceIds = ownedDevices.rows.map(r => r.device_id);
             if (userDeviceIds.length === 0) {
                 return res.status(200).json({ success: true, data: [] });
             }
