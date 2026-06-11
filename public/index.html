@@ -3,297 +3,591 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AC Automation Dashboard</title>
+  <title>AVIO Platform</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-  <!-- Sidebar -->
-  <nav class="sidebar">
-    <div class="sidebar-header">
-      <span class="logo">❄️</span>
-      <span class="logo-text">AC Automation</span>
+
+  <div class="app-container">
+    <div class="main-wrapper">
+      
+      <!-- Top Pill Header Bar -->
+      <header class="topbar">
+        <div class="brand">
+          <div class="brand-logo" style="background: transparent;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="-10 -10 48 48">
+              <rect x="-3" y="-3" width="30" height="30" rx="5" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.5" />
+              <g fill="none" stroke="#0066FF" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m10 20-1.25-2.5L6 18"/>
+                <path d="M10 4 8.75 6.5 6 6"/>
+                <path d="m14 20 1.25-2.5L18 18"/>
+                <path d="m14 4 1.25 2.5L18 6"/>
+                <path d="m17 21-3-6h-4"/>
+                <path d="m17 3-3 6 1.5 3"/>
+                <path d="M2 12h6.5L10 9"/>
+                <path d="m20 10-1.5 2 1.5 2"/>
+                <path d="M22 12h-6.5L14 15"/>
+                <path d="m4 10 1.5 2L4 14"/>
+                <path d="m7 21 3-6-1.5-3"/>
+                <path d="m7 3 3 6h4"/>
+              </g>
+            </svg>
+          </div>
+          <span>AVIO</span>
+        </div>
+
+        <div class="nav-pills">
+          <a class="nav-item active" data-target="dashboard">Dashboard</a>
+          <a class="nav-item" data-target="devices">Devices</a>
+          <a class="nav-item" data-target="config">Config</a>
+          <a class="nav-item" data-target="logs">Logs & Events</a>
+          <a class="nav-item" data-target="analytics">Analytics</a>
+          <a class="nav-item" data-target="commands">Commands</a>
+          <a class="nav-item" data-target="health">Health</a>
+        </div>
+
+        <div class="topbar-right">
+          <div class="search-bar">
+            <span>🔍</span>
+            <input type="text" placeholder="Search devices, nodes..." id="globalSearch" />
+          </div>
+          <div class="user-profile">
+            <div class="avatar" id="userAvatar">A</div>
+            <span id="usernameDisplay">Admin</span>
+            <button class="logout-btn" id="logoutBtn" onclick="handleLogoutClick()">Logout</button>
+          </div>
+        </div>
+      </header>
+
+      <!-- Main Pages Container -->
+      <main class="content-area">
+
+        <!-- ================= PAGE: DASHBOARD ================= -->
+        <div id="page-dashboard" class="page active">
+          
+          <!-- Sparkline Stats Grid -->
+          <div class="stats-grid">
+            <div class="card stat-card glass-panel">
+              <div class="stat-info">
+                <span class="stat-label">Total Devices <span>📱</span></span>
+                <div class="stat-value-container">
+                  <span class="stat-value" id="dashTotalDev">0</span>
+                  <span class="stat-indicator indicator-blue">Registered</span>
+                </div>
+              </div>
+              <!-- Sparkline SVG simulation -->
+              <div class="sparkline-box">
+                <div class="sparkbar" style="height: 40%"></div>
+                <div class="sparkbar" style="height: 60%"></div>
+                <div class="sparkbar" style="height: 50%"></div>
+                <div class="sparkbar" style="height: 75%"></div>
+                <div class="sparkbar" style="height: 90%"></div>
+              </div>
+            </div>
+            
+            <div class="card stat-card glass-panel">
+              <div class="stat-info">
+                <span class="stat-label">Online Nodes <span>🟢</span></span>
+                <div class="stat-value-container">
+                  <span class="stat-value" id="dashOnlineDev">0</span>
+                  <span class="stat-indicator indicator-green" id="dashOfflineDev">0 Offline</span>
+                </div>
+              </div>
+              <div class="sparkline-box">
+                <div class="sparkbar" style="height: 80%"></div>
+                <div class="sparkbar" style="height: 85%"></div>
+                <div class="sparkbar" style="height: 70%"></div>
+                <div class="sparkbar" style="height: 90%"></div>
+                <div class="sparkbar" style="height: 95%"></div>
+              </div>
+            </div>
+
+            <div class="card stat-card glass-panel">
+              <div class="stat-info">
+                <span class="stat-label">Active AC Units <span>❄️</span></span>
+                <div class="stat-value-container">
+                  <span class="stat-value" id="dashAcOn">0</span>
+                  <span class="stat-indicator indicator-blue">On state</span>
+                </div>
+              </div>
+              <div class="sparkline-box">
+                <div class="sparkbar" style="height: 30%"></div>
+                <div class="sparkbar" style="height: 40%"></div>
+                <div class="sparkbar" style="height: 35%"></div>
+                <div class="sparkbar" style="height: 50%"></div>
+                <div class="sparkbar" style="height: 60%"></div>
+              </div>
+            </div>
+
+            <div class="card stat-card glass-panel">
+              <div class="stat-info">
+                <span class="stat-label">Daily Events (24h) <span>📊</span></span>
+                <div class="stat-value-container">
+                  <span class="stat-value" id="dashTotalEvents">0</span>
+                  <span class="stat-indicator indicator-green">Logged</span>
+                </div>
+              </div>
+              <div class="sparkline-box">
+                <div class="sparkbar" style="height: 50%"></div>
+                <div class="sparkbar" style="height: 70%"></div>
+                <div class="sparkbar" style="height: 65%"></div>
+                <div class="sparkbar" style="height: 85%"></div>
+                <div class="sparkbar" style="height: 80%"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Replicating the Two-Column Operations Layout -->
+          <div class="dashboard-grid">
+            <!-- Left panel: Report operations (Frosted glass panel list) -->
+            <div class="card ops-panel glass-panel">
+              <div class="ops-header">
+                <span class="ops-title">Device Operations</span>
+                <div class="ops-tabs">
+                  <div class="ops-tab active" onclick="filterOpsList('all')" id="tabOpsAll">All</div>
+                  <div class="ops-tab" onclick="filterOpsList('online')" id="tabOpsOnline">Online</div>
+                  <div class="ops-tab" onclick="filterOpsList('offline')" id="tabOpsOffline">Offline</div>
+                </div>
+              </div>
+              
+              <!-- Ops Cards Container -->
+              <div class="ops-device-list" id="dashDeviceList">
+                <div style="padding: 20px; text-align: center; color: var(--secondary)">Loading devices...</div>
+              </div>
+            </div>
+
+            <!-- Right panel: Interactive map & workload graphs -->
+            <div class="main-dashboard-content">
+              
+              <!-- Interactive Schematic Node Map -->
+              <div class="card map-panel glass-panel">
+                <span class="map-title">Network Schematic & Flow</span>
+                <div class="schema-container">
+                  <!-- Schematic connecting lines -->
+                  <svg class="schema-line-svg" id="schemaSvg">
+                    <!-- Lines will be dynamically updated or pre-drawn -->
+                    <path d="M 150 160 C 250 160, 250 160, 420 160" class="schema-path active" id="line1" />
+                    <path d="M 420 160 C 500 160, 500 160, 680 160" class="schema-path active" id="line2" />
+                  </svg>
+
+                  <!-- Node 1: Cloud/Server -->
+                  <div class="schema-node">
+                    <span class="schema-node-header">Server Hub</span>
+                    <div class="node-icon-wrapper">
+                      🖥️
+                      <div class="node-status-dot active"></div>
+                    </div>
+                    <span class="node-temp">Active</span>
+                    <span class="node-state-label" id="schemaServerStatus">Online</span>
+                  </div>
+
+                  <!-- Node 2: Selected AC Device Node -->
+                  <div class="schema-node" id="schemaDeviceNode" style="cursor: pointer;">
+                    <span class="schema-node-header" id="schemaDeviceName">Device</span>
+                    <div class="node-icon-wrapper" style="background:#eff6ff;">
+                      ❄️
+                      <div class="node-status-dot inactive" id="schemaDeviceDot"></div>
+                    </div>
+                    <span class="node-temp" id="schemaDeviceTemp">-- °C</span>
+                    <span class="node-state-label" id="schemaDeviceState">Offline</span>
+                  </div>
+
+                  <!-- Node 3: Physical AC Receiver unit -->
+                  <div class="schema-node">
+                    <span class="schema-node-header">AC Receiver</span>
+                    <div class="node-icon-wrapper">
+                      🔌
+                      <div class="node-status-dot inactive" id="schemaAcReceiverDot"></div>
+                    </div>
+                    <span class="node-temp" id="schemaAcStateText">OFF</span>
+                    <span class="node-state-label">IR Terminal</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Workload and Stats charts -->
+              <div class="bottom-charts-grid">
+                <div class="card chart-card glass-panel">
+                  <div class="chart-card-header">
+                    <span class="chart-title">System Workload</span>
+                    <div class="chart-subtitle-box">
+                      <span class="chart-subtitle-value" id="workloadUptime">99.8%</span>
+                      <span class="chart-subtitle-lbl">Uptime</span>
+                    </div>
+                  </div>
+                  <div class="chart-canvas-container">
+                    <canvas id="chartUsage"></canvas>
+                  </div>
+                </div>
+
+                <div class="card chart-card glass-panel">
+                  <div class="chart-card-header">
+                    <span class="chart-title">Active Control Cycles</span>
+                    <div class="chart-subtitle-box">
+                      <span class="chart-subtitle-value" id="cycleCountVal">--</span>
+                      <span class="chart-subtitle-lbl">Cycles</span>
+                    </div>
+                  </div>
+                  <div class="chart-canvas-container">
+                    <canvas id="chartOnOff"></canvas>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ================= PAGE: DEVICES ================= -->
+        <div id="page-devices" class="page">
+          <div class="page-header">
+            <div class="page-title">
+              <h1>Device Management</h1>
+              <p>View details and manage states of all connected smart controllers.</p>
+            </div>
+            <button class="btn btn-primary" onclick="loadDevices()">↻ Refresh List</button>
+          </div>
+
+          <div class="card table-panel glass-panel">
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Device ID</th>
+                    <th>Device Name</th>
+                    <th>Status</th>
+                    <th>Active Config</th>
+                    <th>Last Sync Seen</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="devicesTableBody">
+                  <tr><td colspan="6" style="text-align: center;">Loading devices list...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= PAGE: CONFIG ================= -->
+        <div id="page-config" class="page">
+          <div class="page-header">
+            <div class="page-title">
+              <h1>Configuration Profiles</h1>
+              <p>View active IR templates and NVM settings payload.</p>
+            </div>
+          </div>
+
+          <div class="commands-grid">
+            <div class="card glass-panel">
+              <div class="page-header" style="margin-bottom:16px;">
+                <span class="chart-title">Active Config Profiles JSON</span>
+              </div>
+              <div class="json-editor" id="configEditor" contenteditable="true">
+{
+  "protocol": "LG",
+  "bits": 28,
+  "tempOffset": 2,
+  "defaultMode": "COOL",
+  "autoOffTimer": 3600
+}</div>
+              <div style="margin-top: 16px; display: flex; gap: 12px;">
+                <button class="btn btn-secondary">Upload Profile</button>
+                <button class="btn btn-primary">Save Changes</button>
+              </div>
+            </div>
+
+            <div class="card glass-panel">
+              <div class="page-header" style="margin-bottom:16px;">
+                <span class="chart-title">Sync History</span>
+              </div>
+              <div class="table-wrapper">
+                <table>
+                  <thead><tr><th>Version</th><th>Date</th><th>Action</th></tr></thead>
+                  <tbody>
+                    <tr><td>v1.4</td><td>Today, 10:00 AM</td><td><span class="badge badge-online">Active</span></td></tr>
+                    <tr><td>v1.3</td><td>Yesterday</td><td><button class="btn btn-secondary">Rollback</button></td></tr>
+                    <tr><td>v1.2</td><td>May 1</td><td><button class="btn btn-secondary">Rollback</button></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= PAGE: LOGS ================= -->
+        <div id="page-logs" class="page">
+          <div class="page-header">
+            <div class="page-title">
+              <h1>System Live Event Logs</h1>
+              <p>Real-time updates queried from database system logs.</p>
+            </div>
+            <div style="display:flex; gap: 12px;">
+              <input type="text" class="input" style="width: 200px;" placeholder="Filter by ID or event..." id="logFilter" oninput="filterLogs()"/>
+              <button class="btn btn-secondary" onclick="loadLogs()">↻ Refresh</button>
+            </div>
+          </div>
+          
+          <div class="card log-terminal-panel glass-panel">
+            <div class="log-terminal" id="logTerminal">
+               <div style="color: #94a3b8;">Connecting to server log stream...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= PAGE: ANALYTICS ================= -->
+        <div id="page-analytics" class="page">
+          <div class="page-header">
+            <div class="page-title">
+              <h1>Analytics & Telemetry</h1>
+              <p>Historical presence cycles and power estimations.</p>
+            </div>
+          </div>
+          
+          <div class="bottom-charts-grid" style="grid-template-columns: 1fr 1fr; margin-bottom: 20px;">
+            <div class="card glass-panel" style="padding: 20px;">
+              <span class="chart-title">Presence Detection Duration (Hours)</span>
+              <div class="chart-canvas-container" style="height: 240px; margin-top:12px;">
+                <canvas id="chartPresence"></canvas>
+              </div>
+            </div>
+            <div class="card glass-panel" style="padding: 20px;">
+              <span class="chart-title">Power Estimation (kWh)</span>
+              <div class="chart-canvas-container" style="height: 240px; margin-top:12px;">
+                <canvas id="chartPower"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= PAGE: COMMANDS ================= -->
+        <div id="page-commands" class="page">
+          <div class="page-header">
+            <div class="page-title">
+              <h1>Commands Panel</h1>
+              <p>Transmit instant commands to live devices.</p>
+            </div>
+          </div>
+          
+          <div class="commands-grid">
+            <div class="card glass-panel">
+              <div class="page-header" style="margin-bottom:16px;">
+                <span class="chart-title">☁️ C2D Command Payload</span>
+              </div>
+              <div class="form-group">
+                <label>Target Device ID</label>
+                <input type="text" id="cmdDeviceId" class="input" placeholder="e.g. AC_1CC3ABC25754" />
+              </div>
+              <div class="form-group">
+                <label>Command Name</label>
+                <input type="text" id="cmdName" class="input" placeholder="e.g. SET_TEMP" />
+              </div>
+              <div class="form-group">
+                <label>Payload (JSON)</label>
+                <textarea id="cmdPayload" class="input">{"target": 24}</textarea>
+              </div>
+              <button class="btn btn-primary" onclick="sendCommand()">Send Command</button>
+            </div>
+
+            <div class="card glass-panel">
+              <div class="page-header" style="margin-bottom:16px;">
+                <span class="chart-title">⚡ Invoke Direct Method</span>
+              </div>
+              <div class="form-group">
+                <label>Target Device ID</label>
+                <input type="text" id="methodDeviceId" class="input" placeholder="e.g. AC_1CC3ABC25754" />
+              </div>
+              <div class="form-group">
+                <label>Method Name</label>
+                <input type="text" id="methodName" class="input" placeholder="e.g. restartLD2410" />
+              </div>
+              <button class="btn btn-primary" onclick="invokeMethod()">Invoke Method</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= PAGE: HEALTH ================= -->
+        <div id="page-health" class="page">
+          <div class="page-header">
+            <div class="page-title">
+              <h1>Backend Health & Status</h1>
+              <p>Live health metrics of server database engines.</p>
+            </div>
+            <button class="btn btn-secondary" onclick="checkHealth()">↻ Check Status</button>
+          </div>
+
+          <div class="stats-grid" style="margin-bottom: 20px;">
+            <div class="card glass-panel" style="padding:20px;">
+              <span class="stat-label">Node.js Gateway</span>
+              <div style="font-size: 26px; font-weight: 700; color: var(--success); margin: 10px 0;" id="healthApiStatus">Online</div>
+              <p style="color: var(--secondary); font-size:12px;">Latency: <span id="healthLatency">--</span> ms</p>
+            </div>
+            <div class="card glass-panel" style="padding:20px;">
+              <span class="stat-label">PostgreSQL Database</span>
+              <div style="font-size: 26px; font-weight: 700; color: var(--success); margin: 10px 0;">Connected</div>
+              <p style="color: var(--secondary); font-size:12px;">Analytics Engine</p>
+            </div>
+            <div class="card glass-panel" style="padding:20px;">
+              <span class="stat-label">MongoDB Server</span>
+              <div style="font-size: 26px; font-weight: 700; color: var(--success); margin: 10px 0;">Connected</div>
+              <p style="color: var(--secondary); font-size:12px;">Configuration Store</p>
+            </div>
+          </div>
+
+          <div class="card glass-panel">
+             <div class="page-header" style="margin-bottom: 12px;"><span class="chart-title">System Metrics</span></div>
+             <p style="margin-bottom: 8px;">RAM Allocation: 145 MB / 512 MB</p>
+             <p style="margin-bottom: 8px;">CPU Usage: 3%</p>
+             <p>Uptime: 14 days, 5 hours</p>
+          </div>
+        </div>
+
+      </main>
+      
+      <!-- Footer Status Indicators -->
+      <footer style="display: flex; justify-content: space-between; align-items: center; padding: 4px 12px; margin-top: auto;">
+        <div class="server-status" id="serverStatusBox">
+          <div class="status-dot" id="serverStatusDot"></div>
+          <span id="serverStatusText">Syncing...</span>
+        </div>
+        <span style="font-size:11px; color:var(--secondary)">AVIO Platform v1.2.0</span>
+      </footer>
+
     </div>
-    <ul class="nav-links">
-      <li><a href="#" class="nav-item active" data-page="dashboard">
-        <span class="icon">📊</span> Dashboard
-      </a></li>
-      <li><a href="#" class="nav-item" data-page="devices">
-        <span class="icon">📡</span> Devices
-      </a></li>
-      <li><a href="#" class="nav-item" data-page="events">
-        <span class="icon">📋</span> Event Log
-      </a></li>
-      <li><a href="#" class="nav-item" data-page="commands">
-        <span class="icon">⚡</span> Send Command
-      </a></li>
-    </ul>
-    <div class="sidebar-footer">
-      <div class="server-status" id="serverStatus">
-        <span class="status-dot" id="statusDot"></span>
-        <span id="statusText">Checking...</span>
-      </div>
-    </div>
-  </nav>
 
-  <!-- Main Content -->
-  <main class="main-content">
-    <!-- Dashboard Page -->
-    <div id="page-dashboard" class="page active">
-      <div class="page-header">
-        <h1>Dashboard</h1>
-        <button class="btn btn-secondary" onclick="refreshDashboard()">↻ Refresh</button>
+    <!-- ================= SLIDE IN DEVICE DETAIL PANEL ================= -->
+    <div class="side-panel-overlay" id="deviceOverlay" onclick="closeDevicePanel()"></div>
+    <div class="side-panel" id="devicePanel">
+      <div class="side-panel-header">
+        <div>
+          <h2 id="panelDevName">Device Info</h2>
+          <p style="color: var(--secondary); font-size: 11px; margin-top:2px;" id="panelDevId">id: ---</p>
+        </div>
+        <button class="side-panel-close" onclick="closeDevicePanel()">×</button>
       </div>
+      
+      <div class="side-panel-content">
+        <!-- Live Status Info -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+           <div class="panel-card">
+             <div style="color: var(--secondary); font-size: 11px; font-weight:600; margin-bottom: 4px;">AC POWER</div>
+             <div style="font-size: 20px; font-weight: bold; color: var(--accent);" id="panelAcState">--</div>
+           </div>
+           <div class="panel-card">
+             <div style="color: var(--secondary); font-size: 11px; font-weight:600; margin-bottom: 4px;">ROOM TEMP</div>
+             <div style="font-size: 20px; font-weight: bold; color: var(--accent);" id="panelTemp">-- °C</div>
+           </div>
+        </div>
 
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-icon">📡</div>
-          <div class="stat-info">
-            <div class="stat-value" id="statDevices">—</div>
-            <div class="stat-label">Devices Synced</div>
+        <!-- Direct Controls -->
+        <div class="panel-card" style="display:flex; flex-direction:column; gap:12px;">
+          <h3 style="font-size:13px; font-weight:700; color:var(--primary);">Control Panel</h3>
+          <div style="display: flex; gap: 8px;">
+             <button class="btn btn-primary" style="flex: 1; justify-content:center;" onclick="sendQuickCommand('TURN_ON')">Turn ON</button>
+             <button class="btn btn-danger" style="flex: 1; justify-content:center;" onclick="sendQuickCommand('TURN_OFF')">Turn OFF</button>
           </div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon">📋</div>
-          <div class="stat-info">
-            <div class="stat-value" id="statEvents">—</div>
-            <div class="stat-label">Total Events (last 50)</div>
-          </div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon">🟢</div>
-          <div class="stat-info">
-            <div class="stat-value" id="statAcOn">—</div>
-            <div class="stat-label">AC ON Events</div>
-          </div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon">🔴</div>
-          <div class="stat-info">
-            <div class="stat-value" id="statAcOff">—</div>
-            <div class="stat-label">AC OFF Events</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="dashboard-grid">
-        <div class="card">
-          <div class="card-header">
-            <h2>Recent Events</h2>
-            <span class="badge" id="recentEventsBadge">Live</span>
-          </div>
-          <div class="table-wrapper">
-            <table class="data-table" id="dashboardEventsTable">
-              <thead>
-                <tr>
-                  <th>Device</th>
-                  <th>Event</th>
-                  <th>Temp (°C)</th>
-                  <th>Presence</th>
-                  <th>Time (IST)</th>
-                </tr>
-              </thead>
-              <tbody id="dashboardEventsBody">
-                <tr><td colspan="5" class="loading">Loading...</td></tr>
-              </tbody>
-            </table>
+          <div style="display: flex; gap: 8px;">
+             <button class="btn btn-secondary" style="flex: 1; justify-content:center;" onclick="sendQuickCommand('REBOOT')">Reboot</button>
+             <button class="btn btn-secondary" style="flex: 1; justify-content:center;" onclick="sendQuickCommand('LEARN')">Learn IR</button>
           </div>
         </div>
 
-        <div class="card">
-          <div class="card-header">
-            <h2>Registered Devices</h2>
-          </div>
-          <div id="dashboardDevicesList" class="device-list">
-            <div class="loading">Loading...</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Devices Page -->
-    <div id="page-devices" class="page">
-      <div class="page-header">
-        <h1>Devices</h1>
-        <button class="btn btn-secondary" onclick="loadDevicesPage()">↻ Refresh</button>
-      </div>
-
-      <div class="card">
-        <div class="card-header">
-          <h2>Lookup Device</h2>
-        </div>
-        <div class="form-row">
-          <input type="text" id="deviceLookupId" class="input" placeholder="Enter Device ID" />
-          <button class="btn btn-primary" onclick="lookupDevice()">Search</button>
-        </div>
-        <div id="deviceLookupResult" class="device-detail hidden"></div>
-      </div>
-
-      <div class="card" style="margin-top:1.5rem">
-        <div class="card-header">
-          <h2>All Synced Devices</h2>
-          <span class="hint">Devices that have synced at least once</span>
-        </div>
-        <div id="allDevicesContainer">
-          <div class="loading">Loading...</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Events Page -->
-    <div id="page-events" class="page">
-      <div class="page-header">
-        <h1>Event Log</h1>
-        <div class="header-actions">
-          <label class="toggle-label">
-            <input type="checkbox" id="autoRefreshToggle" onchange="toggleAutoRefresh()" />
-            Auto-refresh (5s)
-          </label>
-          <button class="btn btn-secondary" onclick="loadEvents()">↻ Refresh</button>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-header">
-          <h2>AC Events (Last 50)</h2>
-          <span class="badge" id="eventCount">0 events</span>
-        </div>
-        <div class="filters">
-          <input type="text" id="eventFilter" class="input input-sm" placeholder="Filter by device ID or event..." oninput="filterEvents()" />
-        </div>
-        <div class="table-wrapper">
-          <table class="data-table" id="eventsTable">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Device ID</th>
-                <th>Event</th>
-                <th>Temperature (°C)</th>
-                <th>Presence</th>
-                <th>Time (IST)</th>
-              </tr>
-            </thead>
-            <tbody id="eventsTableBody">
-              <tr><td colspan="6" class="loading">Loading...</td></tr>
-            </tbody>
+        <!-- NVM Telemetry Specs -->
+        <div class="panel-card">
+          <h3 style="font-size:13px; font-weight:700; color:var(--primary); margin-bottom:12px;">Device Telemetry Specs</h3>
+          <table style="width: 100%;">
+             <tr><td style="padding: 6px 0; color: var(--secondary); font-size:12px;">IP Address</td><td style="text-align: right; font-weight:600;" id="panelIp">--</td></tr>
+             <tr><td style="padding: 6px 0; color: var(--secondary); font-size:12px;">WiFi Signal (RSSI)</td><td style="text-align: right; font-weight:600;" id="panelRssi">--</td></tr>
+             <tr><td style="padding: 6px 0; color: var(--secondary); font-size:12px;">Free Heap Memory</td><td style="text-align: right; font-weight:600;" id="panelHeap">--</td></tr>
+             <tr><td style="padding: 6px 0; color: var(--secondary); font-size:12px;">Firmware Version</td><td style="text-align: right; font-weight:600;" id="panelFw">--</td></tr>
           </table>
         </div>
+        
+        <button class="btn btn-danger" style="justify-content: center; width: 100%;">Remove Node</button>
       </div>
     </div>
 
-    <!-- Commands Page -->
-    <div id="page-commands" class="page">
-      <div class="page-header">
-        <h1>Send Command</h1>
+  </div>
+
+  <!-- ================= AUTH SYSTEM OVERLAY ================= -->
+  <div class="auth-overlay" id="authOverlay">
+    <div class="auth-card glass-panel" id="authCard">
+      <!-- Header with AVIO Logo -->
+      <div class="auth-header">
+        <div class="auth-logo">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="-10 -10 48 48">
+            <rect x="-3" y="-3" width="30" height="30" rx="5" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.5" />
+            <g fill="none" stroke="#0066FF" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m10 20-1.25-2.5L6 18"/>
+              <path d="M10 4 8.75 6.5 6 6"/>
+              <path d="m14 20 1.25-2.5L18 18"/>
+              <path d="m14 4 1.25 2.5L18 6"/>
+              <path d="m17 21-3-6h-4"/>
+              <path d="m17 3-3 6 1.5 3"/>
+              <path d="M2 12h6.5L10 9"/>
+              <path d="m20 10-1.5 2 1.5 2"/>
+              <path d="M22 12h-6.5L14 15"/>
+              <path d="m4 10 1.5 2L4 14"/>
+              <path d="m7 21 3-6-1.5-3"/>
+              <path d="m7 3 3 6h4"/>
+            </g>
+          </svg>
+        </div>
+        <h1 id="authTitle">AVIO Admin</h1>
+        <p id="authSubtitle">Please sign in to access the system metrics.</p>
       </div>
 
-      <div class="commands-grid">
-        <!-- C2D Command -->
-        <div class="card">
-          <div class="card-header">
-            <h2>☁️ Cloud-to-Device Command</h2>
-          </div>
-          <p class="card-desc">Send a message directly to a device via Azure IoT Hub.</p>
-          <div class="form-group">
-            <label>Device ID</label>
-            <input type="text" id="cmdDeviceId" class="input" placeholder="e.g. ac-device-001" />
-          </div>
-          <div class="form-group">
-            <label>Command</label>
-            <input type="text" id="cmdCommand" class="input" placeholder="e.g. SET_TEMP, TURN_OFF" />
-          </div>
-          <div class="form-group">
-            <label>Extra Payload (JSON)</label>
-            <textarea id="cmdPayload" class="input textarea" placeholder='{"temperature": 24}'></textarea>
-          </div>
-          <button class="btn btn-primary" onclick="sendCommand()">Send Command</button>
-          <div id="cmdResult" class="result-box hidden"></div>
-        </div>
+      <!-- Auth Error Banner -->
+      <div class="auth-error" id="authError" style="display: none;"></div>
 
-        <!-- Direct Method -->
-        <div class="card">
-          <div class="card-header">
-            <h2>⚡ Invoke Direct Method</h2>
-          </div>
-          <p class="card-desc">Invoke a synchronous direct method on a device and get a response.</p>
-          <div class="form-group">
-            <label>Device ID</label>
-            <input type="text" id="methodDeviceId" class="input" placeholder="e.g. ac-device-001" />
-          </div>
-          <div class="form-group">
-            <label>Method Name</label>
-            <input type="text" id="methodName" class="input" placeholder="e.g. getStatus, reboot" />
-          </div>
-          <div class="form-group">
-            <label>Payload (JSON)</label>
-            <textarea id="methodPayload" class="input textarea" placeholder='{}'></textarea>
-          </div>
-          <button class="btn btn-primary" onclick="invokeMethod()">Invoke Method</button>
-          <div id="methodResult" class="result-box hidden"></div>
+      <!-- Login Form -->
+      <form id="loginForm" onsubmit="handleLoginSubmit(event)">
+        <div class="input-group">
+          <label for="loginUsername">Username or Email</label>
+          <input type="text" id="loginUsername" placeholder="Enter username or email" required />
         </div>
+        <div class="input-group">
+          <label for="loginPassword">Password</label>
+          <input type="password" id="loginPassword" placeholder="••••••••" required />
+        </div>
+        <button type="submit" class="btn btn-primary btn-auth" id="loginSubmitBtn">
+          <span>Sign In</span>
+        </button>
+      </form>
 
-        <!-- Log Event -->
-        <div class="card">
-          <div class="card-header">
-            <h2>📝 Log Manual Event</h2>
-          </div>
-          <p class="card-desc">Manually log an AC event to the database.</p>
-          <div class="form-group">
-            <label>Device ID</label>
-            <input type="text" id="logDeviceId" class="input" placeholder="e.g. ac-device-001" />
-          </div>
-          <div class="form-group">
-            <label>Event</label>
-            <select id="logEvent" class="input">
-              <option value="AC_ON">AC_ON</option>
-              <option value="AC_OFF">AC_OFF</option>
-              <option value="SYNC">SYNC</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Temperature (°C) <span class="optional">optional</span></label>
-            <input type="number" id="logTemp" class="input" placeholder="e.g. 24.5" step="0.1" />
-          </div>
-          <div class="form-group">
-            <label>Presence <span class="optional">optional</span></label>
-            <select id="logPresence" class="input">
-              <option value="">— not set —</option>
-              <option value="true">true</option>
-              <option value="false">false</option>
-            </select>
-          </div>
-          <button class="btn btn-primary" onclick="logManualEvent()">Log Event</button>
-          <div id="logResult" class="result-box hidden"></div>
+      <!-- Setup Form (Hidden by default) -->
+      <form id="setupForm" onsubmit="handleSetupSubmit(event)" style="display: none;">
+        <div class="input-group">
+          <label for="setupUsername">Username</label>
+          <input type="text" id="setupUsername" placeholder="e.g. admin" required />
         </div>
-
-        <!-- Sync Device -->
-        <div class="card">
-          <div class="card-header">
-            <h2>🔄 Sync Device</h2>
-          </div>
-          <p class="card-desc">Register or update a device configuration in MongoDB.</p>
-          <div class="form-group">
-            <label>Device ID</label>
-            <input type="text" id="syncDeviceId" class="input" placeholder="e.g. ac-device-001" />
-          </div>
-          <div class="form-group">
-            <label>Device Name</label>
-            <input type="text" id="syncDeviceName" class="input" placeholder="e.g. Living Room AC" />
-          </div>
-          <div class="form-group">
-            <label>Active Config Name</label>
-            <input type="text" id="syncConfigName" class="input" placeholder="e.g. SUMMER_MODE" />
-          </div>
-          <div class="form-group">
-            <label>Config Data (JSON) <span class="optional">optional</span></label>
-            <textarea id="syncConfigData" class="input textarea" placeholder='{"targetTemp": 24, "mode": "cool"}'></textarea>
-          </div>
-          <button class="btn btn-primary" onclick="syncDevice()">Sync Device</button>
-          <div id="syncResult" class="result-box hidden"></div>
+        <div class="input-group">
+          <label for="setupEmail">Email Address</label>
+          <input type="email" id="setupEmail" placeholder="admin@example.com" required />
         </div>
-      </div>
+        <div class="input-group">
+          <label for="setupPassword">Password</label>
+          <input type="password" id="setupPassword" placeholder="••••••••" required />
+        </div>
+        <div class="input-group">
+          <label for="setupConfirmPassword">Confirm Password</label>
+          <input type="password" id="setupConfirmPassword" placeholder="••••••••" required />
+        </div>
+        <button type="submit" class="btn btn-success btn-auth" id="setupSubmitBtn">
+          <span>Set Up Admin Account</span>
+        </button>
+      </form>
     </div>
-  </main>
+  </div>
 
+  <div id="toast-container"></div>
   <script src="app.js"></script>
 </body>
 </html>

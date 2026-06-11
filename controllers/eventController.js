@@ -28,8 +28,26 @@ const logEvent = async (req, res) => {
 
 const getEvents = async (req, res) => {
     try {
-        const result = await pool.query('SELECT * FROM ac_events ORDER BY created_at DESC LIMIT 50');
-        return res.status(200).json(result.rows);
+        const user = req.user;
+
+        let query = 'SELECT id, device_id, event AS event_type, temperature, presence, created_at FROM ac_events ORDER BY created_at DESC LIMIT 50';
+        let params = [];
+
+        if (user.role !== 'admin') {
+            const ownedDevices = await pool.query(
+                'SELECT device_id FROM device_ownership WHERE user_id = $1',
+                [user.id]
+            );
+            const userDeviceIds = ownedDevices.rows.map(r => r.device_id);
+            if (userDeviceIds.length === 0) {
+                return res.status(200).json({ success: true, data: [] });
+            }
+            query = 'SELECT id, device_id, event AS event_type, temperature, presence, created_at FROM ac_events WHERE device_id = ANY($1) ORDER BY created_at DESC LIMIT 50';
+            params = [userDeviceIds];
+        }
+
+        const result = await pool.query(query, params);
+        return res.status(200).json({ success: true, data: result.rows });
     } catch (err) {
         console.error('[EVENT SERVER ERROR]', err);
         return res.status(500).json({ error: 'Internal Server Error' });
@@ -37,3 +55,4 @@ const getEvents = async (req, res) => {
 };
 
 module.exports = { logEvent, getEvents };
+

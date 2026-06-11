@@ -1,12 +1,15 @@
 const express = require('express');
+
 const app = express();
 
 app.use(express.json());
 
-app.get('/', (req, res) => {
-  res.send('AC Automation Backend Running');
+app.post('/api/events', async (req, res) => {
+    res.json({ success: true });
 });
 
-app.listen(3000, () => {
-  console.log('Server running on port 3000');
+const PORT = 3000;
+
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
 });
