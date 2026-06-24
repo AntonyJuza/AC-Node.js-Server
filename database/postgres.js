@@ -58,6 +58,8 @@ const initPostgresDB = async () => {
         await pool.query(`
             ALTER TABLE devices ADD COLUMN IF NOT EXISTS presence BOOLEAN DEFAULT FALSE;
             ALTER TABLE devices ADD COLUMN IF NOT EXISTS uptime INTEGER DEFAULT 0;
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_password_token VARCHAR(255);
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_password_expires TIMESTAMPTZ;
         `);
 
         // Migration: migrate data from legacy users.devices array to device_ownership if devices column exists
