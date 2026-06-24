@@ -1,0 +1,20 @@
+[33mc2ec2d2[m[33m ([m[1;36mHEAD -> [m[1;32mtheme[m[33m)[m fix:.env.save removed
+[33m72617c8[m feat:pm2 log added for clarification
+[33m7072d01[m[33m ([m[1;31morigin/theme[m[33m)[m refactor: migrate device ownership from user array to dedicated join table
+[33m5ef47aa[m feat: add device and event controllers with ownership verification middleware
+[33m9f6f915[m feat: enable trust proxy setting in express application
+[33mca0b523[m feat: implement core backend modules for device management, authentication, and event handling with PostgreSQL and MongoDB integration
+[33mb31a5dd[m feat: implement user authentication system with JWT, bcrypt hashing, and dashboard UI logic
+[33m26ef15c[m feat: add AVIO platform dashboard UI and branding favicon
+[33m77a99a5[m feat: expand command routing to support power-off and learning endpoints
+[33m20fbab3[m feat: implement requireAuth middleware with automatic developer bypass and device synchronization
+[33m3b2c28a[m feat: add PostgreSQL connection configuration and event management controller
+[33m27cff48[m feat: implement MQTT message handling, PostgreSQL integration for device state management, and device synchronization controller
+[33me06edb3[m feat: implement device controller to manage device operations, synchronization, and MQTT command dispatching
+[33mc66bbdc[m refactor: update absolute file paths to use environment defaults and relative imports
+[33m45d948b[m feat: add MongoDB connectivity test script to verify device model retrieval
+[33mf8350fe[m feat: implement device controller with MQTT command handling and synchronization logic
+[33m5c46a64[m feat: add MQTT subscriber to handle device heartbeats, status updates, event logging, and configuration synchronization
+[33m5ded672[m feat: implement mqtt subscriber to process device heartbeats, status updates, events, and sync data
+[33ma15e1d4[m feat: implement MQTT subscriber to handle device telemetry, status updates, and event logging
+[33md33b9d0[m feat: implement MQTT subscriber module to handle device status, heartbeat, events, and sync updates
