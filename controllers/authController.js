@@ -233,3 +233,21 @@ exports.resetPassword = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+exports.checkEmail = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).send({ error: 'Email is required.' });
+    }
+    const result = await pool.query('SELECT 1 FROM users WHERE email = $1', [email.toLowerCase()]);
+    return res.send({
+      success: true,
+      exists: result.rows.length > 0
+    });
+  } catch (err) {
+    console.error("CHECK EMAIL ERROR:", err);
+    return res.status(500).send({ error: err.message });
+  }
+};
+
