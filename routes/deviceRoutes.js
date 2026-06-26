@@ -20,6 +20,7 @@ router.post('/:deviceId/learn-stop', verifyDeviceOwnership, deviceController.sto
 router.get('/:deviceId/captured-ir', verifyDeviceOwnership, deviceController.getCapturedIr);
 router.post('/:deviceId/timing', verifyDeviceOwnership, deviceController.setTiming);
 router.post('/:deviceId/time-config', verifyDeviceOwnership, deviceController.setTimeConfig);
+router.post('/:deviceId/radar-bypass', verifyDeviceOwnership, deviceController.setRadarBypass);
 
 module.exports = router;
 

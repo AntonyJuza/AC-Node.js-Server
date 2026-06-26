@@ -35,7 +35,7 @@ mqttClient.on("message", async (topic, message) => {
         const eventType = parts[2];
 
         if (eventType === "heartbeat") {
-            const { power, presence, uptime } = payload;
+            const { power, presence, uptime, radarBypassed } = payload;
             await pool.query(`
                 INSERT INTO devices (
                     device_id,
@@ -43,21 +43,24 @@ mqttClient.on("message", async (topic, message) => {
                     power_state,
                     presence,
                     uptime,
+                    radar_bypassed,
                     last_seen
                 )
-                VALUES ($1, TRUE, $2, $3, $4, NOW())
+                VALUES ($1, TRUE, $2, $3, $4, $5, NOW())
                 ON CONFLICT (device_id)
                 DO UPDATE SET
                     online = TRUE,
                     power_state = EXCLUDED.power_state,
                     presence = EXCLUDED.presence,
                     uptime = EXCLUDED.uptime,
+                    radar_bypassed = EXCLUDED.radar_bypassed,
                     last_seen = NOW()
             `, [
                 deviceId,
                 power !== undefined ? power : false,
                 presence !== undefined ? presence : false,
-                uptime !== undefined ? uptime : 0
+                uptime !== undefined ? uptime : 0,
+                radarBypassed !== undefined ? radarBypassed : false
             ]);
 
             console.log(`[DB] Heartbeat updated: ${deviceId} (Power=${power}, Presence=${presence}, Uptime=${uptime})`);

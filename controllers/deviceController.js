@@ -43,6 +43,7 @@ const getDevices = async (req, res) => {
                 online: row.online,
                 powerState: row.power_state,
                 presence: row.presence || false,
+                radarBypassed: row.radar_bypassed || false,
                 uptime: row.uptime || 0,
                 lastSeen: row.last_seen,
                 firmwareVersion: row.firmware_version || 'v1.0.0',
@@ -325,6 +326,23 @@ const setTimeConfig = async (req, res) => {
     }
 };
 
+const setRadarBypass = async (req, res) => {
+    try {
+        const { deviceId } = req.params;
+        const { bypass } = req.body;
+        if (bypass === undefined) {
+            return res.status(400).json({ error: 'Missing bypass parameter' });
+        }
+        const payload = { action: bypass ? 'radar_off' : 'radar_on' };
+        const mqttClient = require('../src/mqtt/mqttClient');
+        mqttClient.publish(`ac/${deviceId}/cmd`, JSON.stringify(payload));
+        return res.status(200).json({ success: true, deviceId });
+    } catch (err) {
+        console.error('[DEVICE SERVER ERROR]', err);
+        return res.status(500).json({ error: 'Failed to set radar bypass' });
+    }
+};
+
 module.exports = { 
     getDevices, 
     syncDevice, 
@@ -338,7 +356,8 @@ module.exports = {
     stopLearn,
     getCapturedIr,
     setTiming,
-    setTimeConfig
+    setTimeConfig,
+    setRadarBypass
 };
 
 
