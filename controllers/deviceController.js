@@ -82,7 +82,7 @@ const getDevices = async (req, res) => {
 const syncDevice = async (req, res) => {
     try {
         console.log('[DEBUG] /api/devices/sync body:', JSON.stringify(req.body, null, 2));
-        const { deviceId, deviceName, activeConfigName, configData } = req.body;
+        const { deviceId, deviceName, activeConfigName, configData, defaultTurnOnTemp } = req.body;
         if (!deviceId) return res.status(400).json({ error: 'Missing deviceId' });
 
         const user = req.user;
@@ -100,28 +100,45 @@ const syncDevice = async (req, res) => {
             }
         }
 
-        const updatePayload = {};
-        if (deviceName) updatePayload.deviceName = deviceName;
-        if (activeConfigName !== undefined) updatePayload.activeConfigName = activeConfigName;
-        if (configData !== undefined) updatePayload.configData = configData;
+        let device = await Device.findOne({ deviceId });
+        if (!device) {
+            device = new Device({ deviceId });
+        }
 
-        const device = await Device.findOneAndUpdate(
-            { deviceId },
-            { $set: updatePayload },
-            { new: true, upsert: true }
-        );
+        if (deviceName) device.deviceName = deviceName;
+        if (activeConfigName !== undefined) device.activeConfigName = activeConfigName;
+        if (configData !== undefined) device.configData = configData;
 
-        if (configData && configData.buttons) {
-            const buttons = configData.buttons || {};
-            const powerOn = buttons.power_on || {};
+        if (defaultTurnOnTemp !== undefined) {
+            if (!device.configData) {
+                device.configData = {};
+            }
+            device.configData.defaultTurnOnTemp = defaultTurnOnTemp;
+        }
+
+        device.markModified('configData');
+        await device.save();
+
+        if (device.configData && device.configData.buttons) {
+            const buttons = device.configData.buttons || {};
+            let powerOn = buttons.power_on || {};
             const powerOff = buttons.power_off || {};
             
+            const defTemp = device.configData.defaultTurnOnTemp;
+            if (defTemp) {
+                const tempKey = `temp_${defTemp}`;
+                if (buttons[tempKey]) {
+                    powerOn = buttons[tempKey];
+                    console.log(`[SYNC] Using custom turn-on temp IR pattern: ${tempKey}`);
+                }
+            }
+
             // Extract timing parameters from one of the active buttons
             const timingSource = powerOn.bits ? powerOn : (powerOff.bits ? powerOff : {});
 
             publishCommand(deviceId, 'set_config', {
                 cfgName: activeConfigName || device.activeConfigName || 'NONE',
-                irFreq: configData.irFreq || 38,
+                irFreq: device.configData.irFreq || 38,
                 hdrMark: timingSource.hdr_mark || 0,
                 hdrSpace: timingSource.hdr_space || 0,
                 bitMark: timingSource.bit_mark || 0,
@@ -129,7 +146,7 @@ const syncDevice = async (req, res) => {
                 zeroSpace: timingSource.zero_space || 0,
                 stopMark: timingSource.bit_mark || 0,
                 bitLen: timingSource.bits || 0,
-                sendRep: configData.sendRep || 3,
+                sendRep: device.configData.sendRep || 3,
                 acOn: powerOn.data || [],
                 acOff: powerOff.data || []
             });
@@ -388,10 +405,11 @@ const changeTemperature = async (req, res) => {
         }
 
         // Save new temp state in mongo
-        if (device.configData) {
-            device.configData.temperature = temp;
-            device.markModified('configData');
+        if (!device.configData) {
+            device.configData = {};
         }
+        device.configData.temperature = temp;
+        device.markModified('configData');
         await device.save();
 
         return res.status(200).json({ 

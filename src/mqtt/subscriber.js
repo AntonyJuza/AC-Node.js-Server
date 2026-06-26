@@ -104,6 +104,20 @@ mqttClient.on("message", async (topic, message) => {
             ]);
 
             console.log(`[DB] Event logged: ${deviceId} -> ${event}`);
+
+            if (event === "AC_ON") {
+                const device = await Device.findOne({ deviceId });
+                if (device && device.configData) {
+                    const defTemp = device.configData.defaultTurnOnTemp;
+                    if (defTemp && defTemp > 0) {
+                        device.configData.temperature = defTemp;
+                        device.markModified('configData');
+                        await device.save();
+                        console.log(`[MQTT EVENT] Auto-set device temperature state to defaultTurnOnTemp: ${defTemp}°C`);
+                    }
+                }
+            }
+
             appEmitter.emit('device_update');
         }
 
