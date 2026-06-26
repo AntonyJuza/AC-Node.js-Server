@@ -155,6 +155,16 @@ function renderOperationsList() {
     const signalPercent = d.online ? Math.min(100, Math.max(10, (100 + wifiSig) * 1.5)) : 0;
     const isSignalLow = signalPercent < 40;
 
+    // Warning for Empty Room with Radar Bypassed
+    let warningHtml = '';
+    if (d.powerState && !d.presence && d.radarBypassed) {
+      warningHtml = `
+        <div style="margin-top: 4px; margin-bottom: 4px; background: var(--danger-bg); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 8px; padding: 8px; font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+          ⚠️ Radar Bypassed & Room Empty!
+        </div>
+      `;
+    }
+
     listContainer.innerHTML += `
       <div class="ops-device-card ${isSelected}" onclick="selectDevice('${d.deviceId}')">
         <div class="device-card-top">
@@ -165,6 +175,7 @@ function renderOperationsList() {
           <span>ID: ${d.deviceId}</span>
           ${acBadge}
         </div>
+        ${warningHtml}
         <div class="battery-progress-box">
           <span class="battery-label">WiFi Signal</span>
           <div class="battery-bar-container">
@@ -307,6 +318,21 @@ function openDevicePanel(deviceId) {
   
   document.getElementById('panelTemp').innerText = device.online ? '24.2 °C' : '-- °C';
   
+  // Radar & Presence Live Info
+  const pRadar = document.getElementById('panelRadarState');
+  pRadar.innerText = device.radarBypassed ? 'BYPASSED' : 'ACTIVE';
+  pRadar.style.color = device.radarBypassed ? 'var(--warning)' : 'var(--success)';
+
+  const pPresence = document.getElementById('panelPresenceState');
+  pPresence.innerText = device.presence ? 'DETECTED' : 'EMPTY';
+  pPresence.style.color = device.presence ? 'var(--success)' : 'var(--secondary)';
+
+  // Radar Toggle Button Text
+  const radarToggleBtn = document.getElementById('panelRadarToggle');
+  if (radarToggleBtn) {
+    radarToggleBtn.innerText = device.radarBypassed ? 'Enable Radar' : 'Bypass Radar';
+  }
+  
   // NVM / Settings
   document.getElementById('panelIp').innerText = device.online ? '192.168.1.104' : '--';
   document.getElementById('panelRssi').innerText = device.online ? (device.configData && device.configData.wifi ? device.configData.wifi + ' dBm' : '-65 dBm') : '--';
@@ -322,6 +348,34 @@ function closeDevicePanel() {
   currentPanelDeviceId = null;
   document.getElementById('deviceOverlay').classList.remove('show');
   document.getElementById('devicePanel').classList.remove('open');
+}
+
+async function toggleRadarBypass() {
+  if (!currentPanelDeviceId) return;
+  const device = devicesList.find(d => d.deviceId === currentPanelDeviceId);
+  if (!device) return;
+  
+  const newBypass = !device.radarBypassed;
+  showToast(`${newBypass ? 'Bypassing' : 'Enabling'} Radar Sensor...`, 'warning');
+  
+  try {
+    const res = await fetch(`${API_BASE}/api/devices/${currentPanelDeviceId}/radar-bypass`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bypass: newBypass })
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      showToast(`Radar bypass successfully updated!`);
+      device.radarBypassed = newBypass;
+      openDevicePanel(currentPanelDeviceId);
+      selectDevice(currentPanelDeviceId);
+    } else {
+      showToast(`Failed: ${data.error || 'Unknown error'}`, 'error');
+    }
+  } catch (e) {
+    showToast('Failed to connect to backend API server', 'error');
+  }
 }
 
 async function sendQuickCommand(cmd) {

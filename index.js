@@ -40,7 +40,7 @@ app.use(morgan('dev'));
 // Rate limiting setup
 const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 mins
-    max: 150, // Limit each IP to 150 requests per window
+    max: 1000, // Limit each IP to 1000 requests per window
     standardHeaders: true,
     legacyHeaders: false,
     message: { error: 'Too many requests, please try again later.' }

@@ -475,7 +475,7 @@
       
       <div class="side-panel-content">
         <!-- Live Status Info -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
            <div class="panel-card">
              <div style="color: var(--secondary); font-size: 11px; font-weight:600; margin-bottom: 4px;">AC POWER</div>
              <div style="font-size: 20px; font-weight: bold; color: var(--accent);" id="panelAcState">--</div>
@@ -483,6 +483,16 @@
            <div class="panel-card">
              <div style="color: var(--secondary); font-size: 11px; font-weight:600; margin-bottom: 4px;">ROOM TEMP</div>
              <div style="font-size: 20px; font-weight: bold; color: var(--accent);" id="panelTemp">-- °C</div>
+           </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+           <div class="panel-card">
+             <div style="color: var(--secondary); font-size: 11px; font-weight:600; margin-bottom: 4px;">RADAR STATUS</div>
+             <div style="font-size: 16px; font-weight: bold; color: var(--accent);" id="panelRadarState">--</div>
+           </div>
+           <div class="panel-card">
+             <div style="color: var(--secondary); font-size: 11px; font-weight:600; margin-bottom: 4px;">PRESENCE</div>
+             <div style="font-size: 16px; font-weight: bold; color: var(--accent);" id="panelPresenceState">--</div>
            </div>
         </div>
 
@@ -496,6 +506,9 @@
           <div style="display: flex; gap: 8px;">
              <button class="btn btn-secondary" style="flex: 1; justify-content:center;" onclick="sendQuickCommand('REBOOT')">Reboot</button>
              <button class="btn btn-secondary" style="flex: 1; justify-content:center;" onclick="sendQuickCommand('LEARN')">Learn IR</button>
+          </div>
+          <div style="display: flex; gap: 8px;">
+             <button class="btn btn-secondary" id="panelRadarToggle" style="flex: 1; justify-content:center;" onclick="toggleRadarBypass()">Toggle Radar</button>
           </div>
         </div>
 
