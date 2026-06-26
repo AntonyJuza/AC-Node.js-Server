@@ -343,6 +343,69 @@ const setRadarBypass = async (req, res) => {
     }
 };
 
+const changeTemperature = async (req, res) => {
+    try {
+        const { deviceId } = req.params;
+        const { temp } = req.body;
+
+        if (temp === undefined) {
+            return res.status(400).json({ error: 'Missing "temp" in request body' });
+        }
+
+        const device = await Device.findOne({ deviceId });
+        if (!device) {
+            return res.status(404).json({ error: 'Device not found' });
+        }
+
+        const tempKey = `temp_${temp}`;
+        let patternSent = false;
+
+        if (device.configData && device.configData.buttons) {
+            const button = device.configData.buttons[tempKey];
+            if (button) {
+                const method = button.method || 'encoded';
+                const { publishCommand } = require('../src/mqtt/publisher');
+                if (method === 'encoded' && button.data) {
+                    publishCommand(deviceId, 'send_ir', {
+                        method: 'encoded',
+                        hexData: button.data,
+                        bits: button.bits,
+                        hdrMark: button.hdr_mark,
+                        hdrSpace: button.hdr_space,
+                        bitMark: button.bit_mark,
+                        oneSpace: button.one_space,
+                        zeroSpace: button.zero_space
+                    });
+                    patternSent = true;
+                } else if (method === 'raw' && button.rawData) {
+                    publishCommand(deviceId, 'send_ir', {
+                        method: 'raw',
+                        rawData: button.rawData
+                    });
+                    patternSent = true;
+                }
+            }
+        }
+
+        // Save new temp state in mongo
+        if (device.configData) {
+            device.configData.temperature = temp;
+            device.markModified('configData');
+        }
+        await device.save();
+
+        return res.status(200).json({ 
+            success: true, 
+            deviceId, 
+            temperature: temp, 
+            patternSent 
+        });
+    } catch (err) {
+        console.error('[DEVICE SERVER ERROR]', err);
+        return res.status(500).json({ error: 'Failed to change temperature' });
+    }
+};
+
 module.exports = { 
     getDevices, 
     syncDevice, 
@@ -357,7 +420,8 @@ module.exports = {
     getCapturedIr,
     setTiming,
     setTimeConfig,
-    setRadarBypass
+    setRadarBypass,
+    changeTemperature
 };
 
 
