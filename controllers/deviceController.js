@@ -7,7 +7,7 @@ const getDevices = async (req, res) => {
     try {
         const user = req.user;
 
-        let query = 'SELECT * FROM devices ORDER BY last_seen DESC';
+        let query = 'SELECT * FROM devices ORDER BY created_at ASC, device_id ASC';
         let params = [];
 
         if (user.role !== 'admin') {
@@ -19,7 +19,7 @@ const getDevices = async (req, res) => {
             if (userDeviceIds.length === 0) {
                 return res.status(200).json({ success: true, data: [] });
             }
-            query = 'SELECT * FROM devices WHERE device_id = ANY($1) ORDER BY last_seen DESC';
+            query = 'SELECT * FROM devices WHERE device_id = ANY($1) ORDER BY created_at ASC, device_id ASC';
             params = [userDeviceIds];
         }
 
