@@ -23,11 +23,28 @@ exports.getProfilesByBrand = async (req, res) => {
     }
 };
 
-// Get detailed profile (with patterns) by ID
+// Get detailed profile (with patterns) by unique Database ID (_id)
 exports.getProfileById = async (req, res) => {
     try {
-        const { profileId } = req.params;
-        const profile = await AcProfile.findOne({ profileId: parseInt(profileId) });
+        const { id } = req.params;
+        const profile = await AcProfile.findById(id);
+        if (!profile) {
+            return res.status(404).json({ success: false, error: 'Profile not found' });
+        }
+        res.json({ success: true, profile });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
+
+// Get detailed profile by brand name and profile ID
+exports.getProfileByBrandAndId = async (req, res) => {
+    try {
+        const { brandName, profileId } = req.params;
+        const profile = await AcProfile.findOne({
+            brand: new RegExp(`^${brandName}$`, 'i'),
+            profileId: parseInt(profileId)
+        });
         if (!profile) {
             return res.status(404).json({ success: false, error: 'Profile not found' });
         }

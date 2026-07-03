@@ -8,6 +8,7 @@ router.use(requireAuth);
 
 router.get('/brands', profileController.getBrands);
 router.get('/brand/:brandName', profileController.getProfilesByBrand);
-router.get('/:profileId', profileController.getProfileById);
+router.get('/brand/:brandName/profile/:profileId', profileController.getProfileByBrandAndId);
+router.get('/:id', profileController.getProfileById);
 
 module.exports = router;

@@ -8,7 +8,7 @@ const buttonSchema = new mongoose.Schema({
 
 const acProfileSchema = new mongoose.Schema(
     {
-        profileId: { type: Number, required: true, unique: true },
+        profileId: { type: Number, required: true },
         brand: { type: String, required: true, trim: true },
         buttons: { type: Map, of: buttonSchema, required: true }
     },
@@ -17,7 +17,7 @@ const acProfileSchema = new mongoose.Schema(
     }
 );
 
-// Index on brand for quick lookups
-acProfileSchema.index({ brand: 1 });
+// Compound unique index so profileId is unique PER brand, and easy to query/sort
+acProfileSchema.index({ brand: 1, profileId: 1 }, { unique: true });
 
 module.exports = mongoose.model('AcProfile', acProfileSchema);

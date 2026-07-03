@@ -36,9 +36,9 @@ const importProfiles = async () => {
                             continue;
                         }
 
-                        // Upsert profile in DB
+                        // Upsert profile in DB based on brand and profileId
                         await AcProfile.findOneAndUpdate(
-                            { profileId },
+                            { brand, profileId },
                             { profileId, brand, buttons },
                             { upsert: true, new: true }
                         );
