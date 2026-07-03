@@ -13,6 +13,7 @@ const { initPostgresDB } = require('./database/postgres');
 const deviceRoutes = require('./routes/deviceRoutes');
 const eventRoutes = require('./routes/eventRoutes');
 const authRoutes = require('./routes/authRoutes');
+const profileRoutes = require('./routes/profileRoutes');
 const appEmitter = require('./src/events/eventEmitter');
 
 const app = express();
@@ -66,6 +67,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/api/auth', authRoutes);
 app.use('/api/devices', deviceRoutes);
 app.use('/api/events', eventRoutes);
+app.use('/api/profiles', profileRoutes);
 
 // Health check root endpoint (keep JSON for API clients, UI is served via static)
 app.get('/status', (req, res) => {
