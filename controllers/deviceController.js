@@ -133,8 +133,20 @@ const syncDevice = async (req, res) => {
                 }
             }
 
-            // Extract timing parameters from one of the active buttons
             const timingSource = powerOn.bits ? powerOn : (powerOff.bits ? powerOff : {});
+            
+            if (powerOn.method === 'raw' && powerOn.rawData) {
+                publishCommand(deviceId, 'set_raw_on', {
+                    action: 'set_raw_on',
+                    rawData: powerOn.rawData
+                });
+            }
+            if (powerOff.method === 'raw' && powerOff.rawData) {
+                publishCommand(deviceId, 'set_raw_off', {
+                    action: 'set_raw_off',
+                    rawData: powerOff.rawData
+                });
+            }
 
             publishCommand(deviceId, 'set_config', {
                 cfgName: activeConfigName || device.activeConfigName || 'NONE',
