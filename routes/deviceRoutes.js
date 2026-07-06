@@ -22,6 +22,7 @@ router.post('/:deviceId/timing', verifyDeviceOwnership, deviceController.setTimi
 router.post('/:deviceId/time-config', verifyDeviceOwnership, deviceController.setTimeConfig);
 router.post('/:deviceId/radar-bypass', verifyDeviceOwnership, deviceController.setRadarBypass);
 router.post('/:deviceId/temperature', verifyDeviceOwnership, deviceController.changeTemperature);
+router.post('/:deviceId/ir-send', verifyDeviceOwnership, deviceController.sendIR);
 
 module.exports = router;
 

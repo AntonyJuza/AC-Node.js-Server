@@ -424,6 +424,54 @@ const changeTemperature = async (req, res) => {
     }
 };
 
+const sendIR = async (req, res) => {
+    try {
+        const { deviceId } = req.params;
+        const { button, key } = req.body;
+
+        if (!button) {
+            return res.status(400).json({ error: 'Missing "button" in request body' });
+        }
+
+        const method = button.method || 'raw';
+        
+        if (method === 'encoded') {
+            const hexData = button.hexData || button.data;
+            const bits = button.bits;
+            const hdrMark = button.hdrMark || button.hdr_mark || button.headerMark || 0;
+            const hdrSpace = button.hdrSpace || button.hdr_space || button.headerSpace || 0;
+            const bitMark = button.bitMark || button.bit_mark || 0;
+            const oneSpace = button.oneSpace || button.one_space || 0;
+            const zeroSpace = button.zeroSpace || button.zero_space || 0;
+
+            publishCommand(deviceId, 'send_ir', {
+                method: 'encoded',
+                hexData,
+                bits,
+                hdrMark,
+                hdrSpace,
+                bitMark,
+                oneSpace,
+                zeroSpace
+            });
+        } else {
+            const rawData = button.rawData || button.pattern;
+            if (!rawData) {
+                return res.status(400).json({ error: 'Missing rawData/pattern for raw method' });
+            }
+            publishCommand(deviceId, 'send_ir', {
+                method: 'raw',
+                rawData
+            });
+        }
+
+        return res.status(200).json({ success: true, deviceId, key });
+    } catch (err) {
+        console.error('[DEVICE SERVER ERROR]', err);
+        return res.status(500).json({ error: 'Failed to send IR command' });
+    }
+};
+
 module.exports = { 
     getDevices, 
     syncDevice, 
@@ -439,7 +487,8 @@ module.exports = {
     setTiming,
     setTimeConfig,
     setRadarBypass,
-    changeTemperature
+    changeTemperature,
+    sendIR
 };
 
 
