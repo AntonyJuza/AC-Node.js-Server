@@ -21,6 +21,11 @@ const deviceSchema = new mongoose.Schema(
         configData: {
             type: mongoose.Schema.Types.Mixed,
         },
+        selectedProfile: {
+            type: String,
+            ref: 'Profile',
+            default: null,
+        },
     },
     {
         timestamps: true, // Automatically adds createdAt and updatedAt fields
