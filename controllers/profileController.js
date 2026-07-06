@@ -49,26 +49,24 @@ exports.getProfileById = async (req, res) => {
         
         commands.forEach(cmd => {
             const displayName = cmd.command.toUpperCase().replace(/_/g, ' ');
-            if (cmd.method === 'raw') {
-                buttons[displayName] = {
-                    method: 'raw',
-                    frequency: cmd.frequency,
-                    pattern: cmd.pattern
-                };
-            } else {
-                buttons[displayName] = {
-                    method: 'encoded',
-                    frequency: cmd.frequency,
-                    hdrMark: cmd.headerMark,
-                    hdrSpace: cmd.headerSpace,
-                    bitMark: cmd.bitMark,
-                    oneSpace: cmd.oneSpace,
-                    zeroSpace: cmd.zeroSpace,
-                    stopMark: cmd.stopMark,
-                    bits: cmd.bits,
-                    hexData: cmd.data
-                };
-            }
+            const buttonData = cmd.method === 'raw' ? {
+                method: 'raw',
+                frequency: cmd.frequency,
+                pattern: cmd.pattern
+            } : {
+                method: 'encoded',
+                frequency: cmd.frequency,
+                hdrMark: cmd.headerMark,
+                hdrSpace: cmd.headerSpace,
+                bitMark: cmd.bitMark,
+                oneSpace: cmd.oneSpace,
+                zeroSpace: cmd.zeroSpace,
+                stopMark: cmd.stopMark,
+                bits: cmd.bits,
+                hexData: cmd.data
+            };
+            buttons[cmd.command] = buttonData;
+            buttons[displayName] = buttonData;
         });
 
         const brandName = profileObj.brandId ? profileObj.brandId.name : 'Unknown';
@@ -110,26 +108,24 @@ exports.getProfileByBrandAndId = async (req, res) => {
         
         commands.forEach(cmd => {
             const displayName = cmd.command.toUpperCase().replace(/_/g, ' ');
-            if (cmd.method === 'raw') {
-                buttons[displayName] = {
-                    method: 'raw',
-                    frequency: cmd.frequency,
-                    pattern: cmd.pattern
-                };
-            } else {
-                buttons[displayName] = {
-                    method: 'encoded',
-                    frequency: cmd.frequency,
-                    hdrMark: cmd.headerMark,
-                    hdrSpace: cmd.headerSpace,
-                    bitMark: cmd.bitMark,
-                    oneSpace: cmd.oneSpace,
-                    zeroSpace: cmd.zeroSpace,
-                    stopMark: cmd.stopMark,
-                    bits: cmd.bits,
-                    hexData: cmd.data
-                };
-            }
+            const buttonData = cmd.method === 'raw' ? {
+                method: 'raw',
+                frequency: cmd.frequency,
+                pattern: cmd.pattern
+            } : {
+                method: 'encoded',
+                frequency: cmd.frequency,
+                hdrMark: cmd.headerMark,
+                hdrSpace: cmd.headerSpace,
+                bitMark: cmd.bitMark,
+                oneSpace: cmd.oneSpace,
+                zeroSpace: cmd.zeroSpace,
+                stopMark: cmd.stopMark,
+                bits: cmd.bits,
+                hexData: cmd.data
+            };
+            buttons[cmd.command] = buttonData;
+            buttons[displayName] = buttonData;
         });
 
         res.json({
